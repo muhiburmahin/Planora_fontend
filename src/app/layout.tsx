@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { GeistSans, GeistMono } from 'geist/font';
-import { Providers } from '@/components/providers';
+
+import { ThemeProvider } from '@/providers/themeProvider';
+import './globals.css';
+import { Navbar } from '@/components/layout/Navbar';
 
 export const metadata: Metadata = {
     title: 'Planora - Professional Event Management Platform',
@@ -37,14 +40,15 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <link rel="icon" href="/favicon.ico" />
-            </head>
-            <body
-                className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased bg-gradient-to-br from-slate-50 to-slate-100 text-gray-900`}
-            >
-                <Providers>{children}</Providers>
+            <body className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-300">
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                >
+                    <Navbar />
+                    {children}
+                </ThemeProvider>
             </body>
         </html>
     );
