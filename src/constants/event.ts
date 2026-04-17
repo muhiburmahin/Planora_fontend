@@ -118,3 +118,28 @@ export const FEATURED_EVENTS: Event[] = [
         totalReviews: 18
     }
 ];
+
+
+// src/constants/event.ts
+
+export const DATE_FILTER_OPTIONS = [
+    { label: 'Today', value: 'today' },
+    { label: 'Tomorrow', value: 'tomorrow' },
+    { label: 'This Week', value: 'this-week' },
+    { label: 'This Month', value: 'this-month' },
+    { label: 'Next Month', value: 'next-month' }
+];
+
+export const PRICE_FILTER_OPTIONS = [
+    { label: 'Free', value: 'free' },
+    { label: 'Paid', value: 'paid' },
+    { label: 'Under 1000', value: 'under-1000' },
+    { label: '1000 - 5000', value: '1000-5000' },
+    { label: 'Over 5000', value: 'over-5000' }
+];
+
+// আপনার যদি ইভেন্ট টাইপ (Online/Offline) এর জন্য অপশন লাগে
+export const EVENT_TYPE_OPTIONS = [
+    { label: 'Online', value: 'online' },
+    { label: 'In-Person', value: 'in-person' }
+];

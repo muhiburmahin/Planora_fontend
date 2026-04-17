@@ -14,6 +14,7 @@ export interface Category {
 }
 
 export interface CategoryUI extends Partial<Category> {
+    id: string;
     name: string;
     color: string;
     iconName: string;
