@@ -11,7 +11,6 @@ const createAxiosInstance = (): AxiosInstance => {
         },
     });
 
-    // Request Interceptor
     instance.interceptors.request.use(
         (config) => {
             const token = localStorage.getItem('accessToken');

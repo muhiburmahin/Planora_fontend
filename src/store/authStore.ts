@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface User {
     id: string;
@@ -11,18 +11,17 @@ export interface User {
     emailVerified: boolean;
 }
 
-export interface AuthState {
+interface AuthState {
     user: User | null;
     token: string | null;
     isLoading: boolean;
     isAuthenticated: boolean;
 
     // Actions
-    setUser: (user: User | null) => void;
-    setToken: (token: string | null) => void;
+    setAuth: (user: User, token: string) => void;
+    setToken: (token: string) => void; // নতুন যোগ করা হয়েছে
     setLoading: (loading: boolean) => void;
     logout: () => void;
-    hydrate: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -33,8 +32,20 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             isAuthenticated: false,
 
-            setUser: (user) => set({ user, isAuthenticated: !!user }),
-            setToken: (token) => set({ token }),
+            // লগইন এর সময় ইউজার এবং টোকেন একসাথে সেট করার জন্য
+            setAuth: (user, token) => set({
+                user,
+                token,
+                isAuthenticated: true,
+                isLoading: false
+            }),
+
+            // শুধুমাত্র টোকেন আপডেট করার জন্য (যেমন: Refresh Token এর সময়)
+            setToken: (token) => set({
+                token,
+                isAuthenticated: !!token
+            }),
+
             setLoading: (isLoading) => set({ isLoading }),
 
             logout: () => {
@@ -43,31 +54,22 @@ export const useAuthStore = create<AuthState>()(
                     token: null,
                     isAuthenticated: false,
                 });
-                // Clear from local storage
-                localStorage.removeItem('auth-storage');
-                localStorage.removeItem('token');
-            },
-
-            hydrate: async () => {
-                // Hydrate from localStorage on app start
-                const storedToken = localStorage.getItem('token');
-                if (storedToken) {
-                    set({ token: storedToken, isAuthenticated: true });
-                }
             },
         }),
         {
-            name: 'auth-storage',
+            name: 'planora-auth',
+            storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
                 user: state.user,
                 token: state.token,
+                isAuthenticated: state.isAuthenticated,
             }),
         }
     )
 );
 
-// Selector hooks for better performance
+// Selector hooks (Performance এর জন্য সেরা)
 export const useUser = () => useAuthStore((state) => state.user);
 export const useToken = () => useAuthStore((state) => state.token);
-export const useIsAuthenticated = () =>
-    useAuthStore((state) => state.isAuthenticated);
+export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
+export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
