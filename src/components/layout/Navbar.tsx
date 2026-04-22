@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/command"
 import { ModeToggle } from "../module/shared/modeTaggle"
 
-// আপনার ব্যাকএন্ড অনুযায়ী লিঙ্কগুলো ফিল্টার করা হয়েছে
+
 const NAV_LINKS = [
     { name: "Home", href: "/", icon: Home },
     { name: "Events", href: "/events" },
@@ -48,6 +48,7 @@ const Navbar = () => {
     const [scrolled, setScrolled] = React.useState(false)
     const [searchOpen, setSearchOpen] = React.useState(false)
     const [mounted, setMounted] = React.useState(false)
+    const [isLoggingOut, setIsLoggingOut] = React.useState(false)
     const pathname = usePathname()
 
     const { data: userData, isLoading } = useGetMe();
@@ -77,11 +78,16 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         try {
+            setIsLoggingOut(true)
             await authClient.logout();
+            // Clear user cache immediately so UI updates
+            queryClient.setQueryData(["user-me"], null)
             queryClient.invalidateQueries({ queryKey: ["user-me"] });
             window.location.href = '/login';
         } catch (err) {
             console.error("Logout failed", err)
+        } finally {
+            setIsLoggingOut(false)
         }
     }
 
@@ -212,8 +218,8 @@ const Navbar = () => {
                                             </DropdownMenuItem>
 
                                             <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/10 py-2.5 rounded-lg cursor-pointer font-bold">
-                                                <LogOut className="h-4 w-4 mr-2" /> Log out
+                                            <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/10 py-2.5 rounded-lg cursor-pointer font-bold">
+                                                <LogOut className="h-4 w-4 mr-2" /> {isLoggingOut ? 'Signing out...' : 'Log out'}
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -262,7 +268,7 @@ const Navbar = () => {
                                         {link.name}
                                     </Link>
                                 ))}
-                                {!user.isLoggedIn && (
+                                {!user && (
                                     <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-100">
                                         <Button asChild onClick={() => setIsOpen(false)} variant="outline" className="rounded-xl py-6 font-bold">
                                             <Link href="/login">Sign In</Link>

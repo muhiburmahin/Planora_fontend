@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff, Lock, Mail, Loader2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { SocialAuth } from "@/components/module/auth/social-auth"
 import { useRouter } from "next/navigation"
 
 import { loginSchema, LoginInput } from "@/lib/validations/auth"
@@ -37,7 +38,7 @@ export const LoginForm = () => {
         setGlobalError(null)
 
         login(data, {
-            onSuccess: (res) => {
+            onSuccess: (res: any) => {
                 toast.success(res.message || "Welcome back to Planora!")
                 router.push("/dashboard")
             },
@@ -82,7 +83,7 @@ export const LoginForm = () => {
                                 : "focus:ring-primary-500/20 focus:border-primary-500"
                         )}
                         placeholder="name@example.com"
-                        disabled={isPending} // useMutation এর লোডিং স্টেট ব্যবহার
+                        disabled={isPending}
                         {...register("email")}
                     />
                 </div>
@@ -99,6 +100,7 @@ export const LoginForm = () => {
                     <button
                         type="button"
                         tabIndex={-1}
+                        onClick={() => window.location.href = '/forgot-password'}
                         className="text-xs text-primary-600 font-bold hover:text-primary-700 transition-colors focus:outline-none focus:underline"
                     >
                         Forgot Password?
@@ -153,6 +155,8 @@ export const LoginForm = () => {
                     </div>
                 ) : "Sign In to Planora"}
             </Button>
+
+            <SocialAuth />
         </form>
     )
 }

@@ -14,8 +14,12 @@ const DynamicIcon = ({ name, className }: { name: string; className?: string }) 
     return <Icon className={className} />;
 };
 
-export const CategoriesSection = () => {
-    const displayCategories = CATEGORIES_DATA.slice(0, 4);
+export interface CategoriesSectionProps {
+    initialCategories?: Array<{ id: string; name: string; description?: string; iconName?: string; color?: string; _count?: any }>
+}
+
+export const CategoriesSection = ({ initialCategories }: CategoriesSectionProps) => {
+    const displayCategories = (initialCategories && initialCategories.length) ? initialCategories.slice(0, 4) : CATEGORIES_DATA.slice(0, 4);
 
     return (
         <section className="py-20 md:py-28 px-4 bg-white dark:bg-slate-950 transition-colors duration-500 border-b border-slate-100 dark:border-slate-900">

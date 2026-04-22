@@ -8,7 +8,7 @@ export const loginAction = async (prevState: any, formData: FormData) => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const response = await authService.login({ email, password });
+    const response = await authService.server.login({ email, password });
 
     if (response.error) {
         return { success: false, message: response.error.message };
@@ -23,7 +23,7 @@ export const registerAction = async (prevState: any, formData: FormData) => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const response = await authService.register({ name, email, password });
+    const response = await authService.server.register({ name, email, password });
 
     if (response.error) {
         return { success: false, message: response.error.message };
@@ -34,7 +34,7 @@ export const registerAction = async (prevState: any, formData: FormData) => {
 
 // লগআউট অ্যাকশন
 export const logoutAction = async () => {
-    await authService.logout();
+    await authService.server.logout();
     revalidatePath("/");
     redirect("/login");
 };

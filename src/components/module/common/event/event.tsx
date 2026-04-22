@@ -1,27 +1,40 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { SearchHero } from './SearchHero';
 import { EventGrid } from './EventGrid';
 import { Pagination } from './Pagination';
-
-import { FEATURED_EVENTS } from '@/constants/event';
-import { CATEGORIES_DATA } from '@/constants/categories';
-import { EventFilters, CategoryUI } from '@/types/eventDitels';
 import { FilterSidebar } from './FilterSidebar';
+import { EventFilters } from '@/types/eventDitels';
+import eventService from '@/services/eventService';
+import categoryService from '@/services/categoryService';
 
+interface EventModuleProps {
+    initialEvents?: any[];
+    initialMeta?: any;
+    initialFilters?: Partial<EventFilters>;
+    initialCategories?: Array<{ id: string; name: string }>;
+}
 
-export default function EventModule() {
+export default function EventModule({ initialEvents = [], initialMeta = null, initialFilters, initialCategories = [] }: EventModuleProps) {
     const [filters, setFilters] = useState<Partial<EventFilters>>({
-        searchTerm: '',
-        categoryId: '',
-        dateRange: '',
-        priceRange: ''
+        searchTerm: initialFilters?.searchTerm ?? '',
+        categoryId: initialFilters?.categoryId ?? '',
+        dateRange: initialFilters?.dateRange ?? '',
+        priceRange: initialFilters?.priceRange ?? ''
     });
 
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const itemsPerPage = 6;
+    const itemsPerPage = 8;
+
+    // Debounced search term to reduce queries
+    const [debouncedSearch, setDebouncedSearch] = useState(filters.searchTerm || '');
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(filters.searchTerm || ''), 350);
+        return () => clearTimeout(t);
+    }, [filters.searchTerm]);
 
     const handleFilterChange = (key: keyof EventFilters, value: any) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
@@ -33,26 +46,46 @@ export default function EventModule() {
         setCurrentPage(1);
     };
 
-    const filteredEvents = useMemo(() => {
-        return (FEATURED_EVENTS as any[]).filter((event) => {
-            const matchesSearch = event.title
-                .toLowerCase()
-                .includes(filters.searchTerm?.toLowerCase() || '');
-
-            const matchesCategory = filters.categoryId
-                ? event.categoryId === filters.categoryId
-                : true;
-
-            return matchesSearch && matchesCategory;
-        });
-    }, [filters]);
-
-    const totalResults = filteredEvents.length;
-    const totalPages = Math.ceil(totalResults / itemsPerPage);
-    const currentEvents = filteredEvents.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
+    // Categories (use initial categories if provided)
+    const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery(
+        ['categories'],
+        async () => {
+            const res = await categoryService.client.list();
+            if (res.error) throw res.error;
+            return res.data;
+        },
+        { staleTime: 60_000, initialData: initialCategories?.length ? initialCategories : undefined }
     );
+
+    // Events (with filters & pagination)
+    const { data: eventsData, isLoading: isEventsLoading, isFetching } = useQuery(
+        ['events', debouncedSearch, filters.categoryId, currentPage],
+        async () => {
+            const params: Record<string, any> = {
+                searchTerm: debouncedSearch || undefined,
+                categoryId: filters.categoryId || undefined,
+                page: currentPage,
+                limit: itemsPerPage,
+            };
+            const res = await eventService.client.list(params);
+            if (res.error) throw res.error;
+            return res.data;
+        },
+        {
+            keepPreviousData: true,
+            staleTime: 30_000,
+            initialData: initialEvents?.length ? { data: initialEvents, meta: initialMeta } : undefined,
+        }
+    );
+
+    // Normalize events & meta
+    const eventsList = useMemo(() => {
+        if (!eventsData) return [];
+        return eventsData.data ?? eventsData ?? [];
+    }, [eventsData]);
+
+    const totalResults = eventsData?.meta?.total ?? (Array.isArray(eventsList) ? eventsList.length : 0);
+    const totalPages = Math.max(1, Math.ceil(totalResults / itemsPerPage));
 
     return (
         <main className="min-h-screen bg-[#FAFAFA] dark:bg-black/5">
@@ -61,6 +94,8 @@ export default function EventModule() {
                 onSearch={(val) => handleFilterChange('searchTerm', val)}
                 onClearFilters={clearFilters}
                 filters={filters}
+                totalEvents={totalResults}
+                isSearching={isFetching}
             />
 
             <div className="max-w-7xl mx-auto px-4 md:px-6 pb-24">
@@ -69,9 +104,10 @@ export default function EventModule() {
                     <aside className="w-full md:w-72 shrink-0">
                         <FilterSidebar
                             filters={filters}
-                            categories={CATEGORIES_DATA as CategoryUI[]}
+                            categories={(categoriesData ?? []) as Array<{ id: string; name: string }>}
                             onFilterChange={handleFilterChange}
                             onClearAll={clearFilters}
+                            isLoading={isCategoriesLoading}
                         />
                     </aside>
 
@@ -98,7 +134,7 @@ export default function EventModule() {
                         </div>
 
                         <EventGrid
-                            events={currentEvents}
+                            events={eventsList}
                             viewMode={viewMode}
                             setViewMode={setViewMode}
                         />

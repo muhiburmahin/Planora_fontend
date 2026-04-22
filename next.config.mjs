@@ -8,6 +8,10 @@ const nextConfig = {
             },
         ],
     },
+    // Explicit Turbopack root to silence workspace-root inference warnings
+    turbopack: {
+        root: './',
+    },
 };
 
 export default nextConfig;

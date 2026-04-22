@@ -31,7 +31,32 @@ instance.interceptors.request.use(
 
 instance.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
+        const status = error.response?.status;
+        const originalRequest = error.config;
+
+        // Attempt refresh once on 401
+        if (status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+            try {
+                const refreshRes = await instance.post('/auth/refresh-token', {});
+                // better-backend now returns accessToken in data.accessToken
+                const newAccessToken = refreshRes.data?.data?.accessToken;
+                if (newAccessToken) {
+                    try {
+                        localStorage.setItem('accessToken', newAccessToken);
+                    } catch { }
+                    if (originalRequest.headers) {
+                        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                    }
+                    return instance.request(originalRequest);
+                }
+            } catch (refreshError) {
+                try { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); } catch { }
+                return Promise.reject({ success: false, message: 'Session expired. Please login again.', status: 401 });
+            }
+        }
+
         const customError = {
             success: false,
             message: error.response?.data?.message || "Internal Server Error!",
@@ -78,8 +103,9 @@ const httpPut = async <TData>(endpoint: string, data: unknown, options?: ApiRequ
     return response.data;
 }
 
-const httpPatch = async <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    const response = await instance.patch<ApiResponse<TData>>(endpoint, data, {
+const httpPatch = async <TData>(endpoint: string, data?: unknown, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
+    // data?: unknown (এখানে প্রশ্নবোধক চিহ্ন যোগ করুন)
+    const response = await instance.patch<ApiResponse<TData>>(endpoint, data || {}, {
         params: options?.params,
         headers: options?.headers,
     });

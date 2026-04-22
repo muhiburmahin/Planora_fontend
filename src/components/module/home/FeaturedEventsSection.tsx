@@ -10,10 +10,14 @@ import { Event } from '@/types/event';
 import { FEATURED_EVENTS } from '@/constants/event';
 import Card, { CardBody } from '../shared/Card';
 
-export const FeaturedEventsSection = () => {
-    const events = FEATURED_EVENTS
-        .filter(e => e.isFeatured && e.isPublished && !e.isDeleted)
-        .slice(0, 3);
+export interface FeaturedEventsSectionProps {
+    initialEvents?: any[];
+}
+
+export const FeaturedEventsSection = ({ initialEvents }: FeaturedEventsSectionProps) => {
+    const events = (initialEvents && initialEvents.length)
+        ? initialEvents
+        : FEATURED_EVENTS.filter(e => e.isFeatured && e.isPublished && !e.isDeleted).slice(0, 3);
 
     return (
         <section className="py-20 md:py-32 px-4 bg-white dark:bg-slate-950">

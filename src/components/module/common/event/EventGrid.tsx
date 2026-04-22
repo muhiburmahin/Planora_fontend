@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { EventCard } from '../shared/EventCard';
+import { EventCard } from '../../shared/EventCard';
 import { LayoutGrid, List, RotateCcw, SearchX } from 'lucide-react';
 import { EventWithDetails } from '@/types/eventDitels';
 import { motion, AnimatePresence } from 'framer-motion';

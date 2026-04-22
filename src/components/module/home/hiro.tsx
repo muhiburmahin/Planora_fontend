@@ -1,20 +1,23 @@
-﻿'use client';
-
-import React from 'react';
+﻿import React from 'react';
 import HeroSection from './HeroSection';
-import CategoriesSection from './CategoriesSection';
-import FeaturedEventsSection from './FeaturedEventsSection';
+import CategoriesSection, { CategoriesSectionProps } from './CategoriesSection';
+import FeaturedEventsSection, { FeaturedEventsSectionProps } from './FeaturedEventsSection';
 import FeaturesSection from './FeaturesSection';
 import CTAMiddleSection from './CTAMiddleSection';
 import TestimonialsSection from './TestimonialsSection';
 import { Footer } from '@/components/layout';
 
-export default function HeroPage() {
+interface HeroPageProps {
+    initialFeaturedEvents?: any[];
+    initialCategories?: CategoriesSectionProps['initialCategories'];
+}
+
+export default function HeroPage({ initialFeaturedEvents, initialCategories }: HeroPageProps) {
     return (
         <main className="min-h-screen">
             <HeroSection />
-            <CategoriesSection />
-            <FeaturedEventsSection />
+            <CategoriesSection initialCategories={initialCategories} />
+            <FeaturedEventsSection initialEvents={initialFeaturedEvents} />
             <FeaturesSection />
             <CTAMiddleSection />
             <TestimonialsSection />

@@ -1,40 +1,48 @@
 import * as React from "react"
-import { signIn, signOut, useSession } from "next-auth/react"
 import { toast } from "sonner"
+import { authClient } from "@/lib/auth-client"
 
 export const useAuth = () => {
     const [isLoading, setIsLoading] = React.useState(false)
-    const { data: session, status } = useSession()
+    const session = null
 
     const authenticate = async (provider: "google" | "credentials", values?: any) => {
         setIsLoading(true)
         try {
-            const result = await signIn(provider, {
-                ...values,
-                callbackUrl: "/dashboard",
-                redirect: false,
-            })
+            if (provider === 'google') {
+                const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+                window.location.href = `${base}/auth/login/google?redirect=${encodeURIComponent('/dashboard')}`
+                return { success: true }
+            }
 
-            const res: any = result
-
-            if (res?.error) {
-                toast.error(res.error || "Authentication failed")
+            if (provider === 'credentials') {
+                const res: any = await authClient.login(values)
+                if (res?.success) {
+                    toast.success('Welcome back!')
+                    window.location.href = '/dashboard'
+                    return { success: true }
+                }
+                toast.error(res?.message || 'Authentication failed')
                 return { success: false }
             }
 
-            if (res?.ok) {
-                toast.success("Welcome back!")
-                window.location.href = res.url || "/dashboard"
-                return { success: true }
-            }
-        } catch (error) {
-            toast.error("Something went wrong")
+            return { success: false }
+        } catch (error: any) {
+            toast.error(error?.message || 'Something went wrong')
+            return { success: false }
         } finally {
             setIsLoading(false)
         }
     }
 
-    const logout = () => signOut({ callbackUrl: "/login" })
+    const logout = async () => {
+        try {
+            await authClient.logout()
+            window.location.href = '/login'
+        } catch {
+            window.location.href = '/login'
+        }
+    }
 
     return {
         session,

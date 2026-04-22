@@ -39,3 +39,16 @@ export const registerSchema = z
 
 export type LoginInput = z.infer<typeof loginSchema>
 export type RegisterInput = z.infer<typeof registerSchema>
+
+export const forgotPasswordSchema = z.object({
+    email: z.string().trim().email("Please enter a valid email address").toLowerCase()
+})
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
+
+export const resetPasswordSchema = z.object({
+    otp: z.string().min(4, "Invalid OTP").max(10, "Invalid OTP"),
+    newPassword: passwordSchema
+})
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>

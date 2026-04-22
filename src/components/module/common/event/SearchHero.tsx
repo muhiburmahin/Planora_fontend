@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, X, Mic, Loader2 } from 'lucide-react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { countActiveFilters } from '@/utils/event';
 import { SearchHeroProps } from '@/types/eventDitels';
 
@@ -21,14 +21,13 @@ export function SearchHero({
     }, [searchTerm]);
 
     const activeFiltersCount = countActiveFilters(filters);
-    const searchParams = useSearchParams();
     const router = useRouter();
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSearch(searchInput);
 
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
         if (searchInput) params.set('searchTerm', searchInput);
         else params.delete('searchTerm');
         router.push(`?${params.toString()}`);

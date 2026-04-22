@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { SocialAuth } from "@/components/module/auth/social-auth"
 // useRouter will provide navigation
 
 export const RegisterForm = () => {
@@ -35,14 +36,20 @@ export const RegisterForm = () => {
         setLoading(true)
         try {
             const res = await authClient.register({ name: data.name, email: data.email, password: data.password })
-            if (res && res.success) {
+            // httpClient returns an ApiResponse on success, and throws a customError on failure
+            if (res && (res as any).success) {
                 toast.success("Account created successfully! Please verify your email.")
                 router.push('/login')
             } else {
-                toast.error(res?.message || 'Registration failed')
+                // Handle unexpected shape
+                const msg = (res as any)?.message || 'Registration failed'
+                toast.error(msg)
             }
         } catch (error: any) {
-            toast.error(error?.response?.data || "Failed to register")
+            // httpClient interceptor rejects with { success:false, message, status, errorSources }
+            console.error("Register error:", error)
+            const message = error?.message || error?.msg || error?.response?.data || JSON.stringify(error)
+            toast.error(message || "Failed to register")
         } finally {
             setLoading(false)
         }
@@ -143,6 +150,8 @@ export const RegisterForm = () => {
                 </div>
                 {errors.confirmPassword && <p className="text-[11px] font-medium text-red-500 px-1">{errors.confirmPassword.message}</p>}
             </div>
+
+            <SocialAuth />
 
             <Button
                 disabled={loading}

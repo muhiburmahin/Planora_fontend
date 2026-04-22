@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={`${GeistSans.variable} ${GeistMono.variable} min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-300`}>
+            <body suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable} min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-300`}>
 
                 <QueryProvider>
                     <ThemeProvider

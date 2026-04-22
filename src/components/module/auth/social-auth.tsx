@@ -4,36 +4,37 @@ import * as React from "react"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { signIn } from "next-auth/react"
-import { useSearchParams } from "next/navigation"
 
 export const SocialAuth = () => {
     const [isLoading, setIsLoading] = React.useState(false)
-    const searchParams = useSearchParams()
-    const error = searchParams.get("error")
-
     React.useEffect(() => {
-        if (error === "OAuthSignin" || error === "OAuthCallback") {
-            toast.error("গুগল দিয়ে লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।")
+        try {
+            const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+            const err = sp.get('error')
+            if (err === 'OAuthSignin' || err === 'OAuthCallback') {
+                toast.error('There was a problem logging in with Google. Please try again.')
+            }
+        } catch (e) {
+            // ignore during SSR
         }
-    }, [error])
+    }, [])
 
     const loginWithGoogle = async () => {
         setIsLoading(true)
         try {
-            // ইন্ডাস্ট্রি স্ট্যান্ডার্ড: লগইন সাকসেস হলে কোথায় যাবে সেটি callbackUrl এ বলে দেওয়া
-            await signIn("google", { callbackUrl: "/dashboard" })
+            const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+            // Redirect to backend social login start which renders a redirector
+            const redirectUrl = `${base}/auth/login/google?redirect=${encodeURIComponent('/dashboard')}`
+            window.location.href = redirectUrl
         } catch (err) {
             toast.error("Something went wrong with Google Login")
         } finally {
-            // সোশ্যাল লগইনে সাধারণত পেজ রিডাইরেক্ট হয়, তাই loading অটোমেটিক চলে যায়
-            // তবুও সেফটির জন্য এটি রাখা ভালো
             setIsLoading(false)
         }
     }
 
     return (
         <div className="w-full space-y-4">
-            {/* মডার্ন ডিভাইডার */}
             <div className="relative flex items-center py-2">
                 <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
                 <span className="flex-shrink mx-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -48,7 +49,7 @@ export const SocialAuth = () => {
                 disabled={isLoading}
                 className="relative group w-full flex items-center justify-center gap-3 h-12 px-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-primary-200 dark:hover:border-primary-900/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
             >
-                {/* বাটন শিমার ইফেক্ট (অ্যাডভান্সড ডিজাইন) */}
+
                 <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-[20deg] group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
 
                 {isLoading ? (
