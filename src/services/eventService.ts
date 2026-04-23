@@ -133,6 +133,16 @@ export const eventService = {
             }
         },
 
+        getEventsByCategory: async (categorySlug: string, filters?: Record<string, any>) => {
+            try {
+                const params = { categorySlug, ...filters };
+                const res = await httpClient.get<any>('/events', { params });
+                return { data: res.data ?? res, error: null };
+            } catch (error) {
+                return { data: null, error };
+            }
+        },
+
         create: async (payload: any) => {
             try {
                 if (payload instanceof FormData) {

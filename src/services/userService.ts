@@ -154,4 +154,12 @@ export const userService = {
     getMyNotifications: async (): Promise<ApiResponse<Notification[]>> => {
         return httpClient.get<Notification[]>('/users/notifications');
     },
+
+    getUserDashboardStats: async (): Promise<ApiResponse<UserDashboardStats>> => {
+        return httpClient.get<UserDashboardStats>('/users/dashboard-summary');
+    },
+
+    getAdminDashboardStats: async (): Promise<ApiResponse<AdminDashboardStats>> => {
+        return httpClient.get<AdminDashboardStats>('/users/admin/dashboard-summary');
+    },
 };

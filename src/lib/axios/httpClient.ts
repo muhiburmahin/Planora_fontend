@@ -104,7 +104,6 @@ const httpPut = async <TData>(endpoint: string, data: unknown, options?: ApiRequ
 }
 
 const httpPatch = async <TData>(endpoint: string, data?: unknown, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    // data?: unknown (এখানে প্রশ্নবোধক চিহ্ন যোগ করুন)
     const response = await instance.patch<ApiResponse<TData>>(endpoint, data || {}, {
         params: options?.params,
         headers: options?.headers,

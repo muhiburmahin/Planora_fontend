@@ -40,7 +40,6 @@ const NAV_LINKS = [
     { name: "Home", href: "/", icon: Home },
     { name: "Events", href: "/events" },
     { name: "Categories", href: "/categories" },
-    { name: "Pricing", href: "/pricing" },
 ]
 
 const Navbar = () => {
@@ -211,11 +210,43 @@ const Navbar = () => {
                                                 </Link>
                                             </DropdownMenuItem>
 
-                                            <DropdownMenuItem asChild>
-                                                <Link href="/profile" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
-                                                    <User size={16} className="text-primary-500" /> My Profile
-                                                </Link>
-                                            </DropdownMenuItem>
+                                            {user.role === 'ADMIN' ? (
+                                                <>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href="/admin/users" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
+                                                            <User size={16} className="text-primary-500" /> User Management
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href="/admin/categories" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
+                                                            <Grid size={16} className="text-primary-500" /> Category Management
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href="/dashboard/profile" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
+                                                            <User size={16} className="text-primary-500" /> My Profile
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href="/dashboard/tickets" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
+                                                            <CreditCard size={16} className="text-primary-500" /> My Tickets
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href="/dashboard/invitations" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
+                                                            <PlusCircle size={16} className="text-primary-500" /> Invitations
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href="/dashboard/notifications" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
+                                                            <Bell size={16} className="text-primary-500" /> Notifications
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
 
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="text-red-600 focus:bg-red-50 dark:focus:bg-red-900/10 py-2.5 rounded-lg cursor-pointer font-bold">
