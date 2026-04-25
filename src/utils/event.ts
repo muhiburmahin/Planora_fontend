@@ -10,7 +10,9 @@ export const formatEventDate = (date: Date | string) => {
 export const countActiveFilters = (filters: Partial<EventFilters>): number => {
     let count = 0;
     if (filters.searchTerm) count++;
-    if (filters.category && filters.category !== 'All') count++;
+    if (filters.categoryId) count++;
+    if (filters.dateRange) count++;
+    if (filters.priceRange) count++;
     if (filters.isOnline) count++;
     return count;
 };

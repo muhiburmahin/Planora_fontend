@@ -1,211 +1,180 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import {
-    Clock,
-    MapPin,
-    Users,
-    Heart,
-    Zap,
-    Calendar,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-    formatEventDate,
-    formatEventTime,
-    getCountdownText,
-    getAvailabilityText,
-    isSoldOut
-} from '@/utils/event';
-import { Event } from '@/types/event';
-import { EventWithDetails, EventCardProps } from '@/types/eventDitels';
+import Link from "next/link";
+import Image from "next/image";
+import { Calendar, MapPin, Users, Star, Clock, Wifi } from "lucide-react";
+import { Event } from "@/types/event";
+import { EventStatus } from "@/types/enums";
+import { formatDate } from "@/utils/helpers";
+import { Badge } from "@/components/ui/badge";
 
-export function EventCard({
-    event,
-    onWishlistToggle,
-    isWishlisted = false,
-    viewMode = 'grid',
-}: EventCardProps) {
-    const [imageError, setImageError] = useState(false);
-
-    // Safety checks for variables
-    const eventImage = event.images?.[0]?.url || null;
-    const participantCount = event._count?.participations || 0;
-    const sold = isSoldOut(participantCount, event.maxParticipants || 0);
-    const countdown = getCountdownText(new Date(event.date));
-    const availability = getAvailabilityText(participantCount, event.maxParticipants || 0);
-
-    const handleWishlist = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onWishlistToggle?.(event.id);
-    };
-
-    // --- Shared Content Components ---
-    const BadgeOverlay = () => (
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10">
-            {countdown && (
-                <div className="bg-red-500/90 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-[10px] font-bold animate-pulse flex items-center gap-1">
-                    <Clock size={10} /> {countdown}
-                </div>
-            )}
-            <div className="bg-gradient-primary text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg">
-                {event.category?.name || 'General'}
-            </div>
-        </div>
-    );
-
-    const WishlistButton = () => (
-        <button
-            onClick={handleWishlist}
-            className="absolute top-3 left-3 p-2 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur hover:scale-110 transition-all z-10 shadow-sm"
-        >
-            <Heart
-                className={cn(
-                    "w-4 h-4 transition-colors",
-                    isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"
-                )}
-            />
-        </button>
-    );
-
-    // --- View Modes ---
-
-    // 1. GRID VIEW
-    if (viewMode === 'grid') {
-        return (
-            <Link href={`/events/${event.slug}`} className="block group">
-                <div className="relative flex flex-col h-full bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 border border-gray-100 dark:border-gray-700">
-
-                    {/* Image Section */}
-                    <div className="relative h-52 w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
-                        <WishlistButton />
-                        <BadgeOverlay />
-
-                        {eventImage && !imageError ? (
-                            <Image
-                                src={eventImage}
-                                alt={event.title}
-                                fill
-                                className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                onError={() => setImageError(true)}
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-                                <Calendar className="w-10 h-10 text-slate-300" />
-                            </div>
-                        )}
-
-                        {sold && (
-                            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-20">
-                                <span className="px-4 py-2 border-2 border-white text-white font-black uppercase tracking-widest rounded-md transform -rotate-12">
-                                    Sold Out
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Content Section */}
-                    <div className="p-5 flex flex-col flex-grow">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-1 group-hover:text-primary-500 transition-colors">
-                            {event.title}
-                        </h3>
-
-                        <div className="space-y-2.5 mb-4">
-                            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 gap-2 font-medium">
-                                <Clock className="w-3.5 h-3.5 text-secondary-500" />
-                                {formatEventDate(event.date)} • {event.time}
-                            </div>
-                            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 gap-2">
-                                {event.isOnline ? (
-                                    <><Zap className="w-3.5 h-3.5 text-emerald-500" /> <span>Online Experience</span></>
-                                ) : (
-                                    <><MapPin className="w-3.5 h-3.5 text-secondary-500" /> <span className="truncate">{event.venue}</span></>
-                                )}
-                            </div>
-                            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 gap-2">
-                                <Users className="w-3.5 h-3.5 text-primary-500" />
-                                <span>{participantCount} Joined</span>
-                            </div>
-                        </div>
-
-                        {availability && (
-                            <div className="mb-4 text-[10px] font-bold text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-md inline-block">
-                                {availability}
-                            </div>
-                        )}
-
-                        <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Price</p>
-                                <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-primary">
-                                    {event.registrationFee === 0 ? "FREE" : `$${event.registrationFee.toFixed(2)}`}
-                                </p>
-                            </div>
-                            <button
-                                disabled={sold}
-                                className={cn(
-                                    "px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md",
-                                    sold
-                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                        : "bg-gradient-primary text-white hover:shadow-lg-primary active:scale-95"
-                                )}
-                            >
-                                {sold ? 'Closed' : 'Book Now'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Link>
-        );
-    }
-
-    // 2. LIST VIEW
-    return (
-        <Link href={`/events/${event.slug}`} className="block group">
-            <div className="flex flex-col sm:flex-row gap-5 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700">
-                {/* Fixed aspect ratio image for list */}
-                <div className="relative w-full sm:w-48 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
-                    <WishlistButton />
-                    {eventImage && !imageError ? (
-                        <Image src={eventImage} alt={event.title} fill className="object-cover" onError={() => setImageError(true)} />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center"><Calendar className="text-gray-300" /></div>
-                    )}
-                    {sold && <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-xs uppercase">Sold Out</div>}
-                </div>
-
-                <div className="flex-grow flex flex-col justify-between py-1">
-                    <div>
-                        <div className="flex justify-between items-start mb-1">
-                            <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest">{event.category?.name}</span>
-                            <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
-                                <Clock size={12} className="text-secondary-500" /> {formatEventDate(event.date)}
-                            </div>
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-500 transition-colors line-clamp-1">{event.title}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">
-                            {event.shortDescription || event.description}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-4">
-                            <p className="text-lg font-black text-slate-900 dark:text-white">
-                                {event.registrationFee === 0 ? "Free" : `$${event.registrationFee.toFixed(2)}`}
-                            </p>
-                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">
-                                {event.isOnline ? 'Online' : 'In-Person'}
-                            </span>
-                        </div>
-                        <button disabled={sold} className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1">
-                            Details <span>→</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Link>
-    );
+interface EventCardProps {
+  event: Event;
+  variant?: "default" | "featured" | "compact";
 }
+
+// --- Helper Functions ---
+const formatPrice = (price: number) => {
+  return price === 0 ? "Free" : `$${price.toFixed(2)}`;
+};
+
+const getStatusColor = (status: EventStatus): "default" | "secondary" | "destructive" | "outline" => {
+  switch (status) {
+    case 'UPCOMING': return 'default';
+    case 'ONGOING': return 'secondary';
+    case 'CANCELLED': return 'destructive';
+    case 'COMPLETED': return 'outline';
+    default: return 'default';
+  }
+};
+
+export function EventCard({ event, variant = "default" }: EventCardProps) {
+  const isPaid = event.registrationFee > 0;
+  const isFull = event.maxParticipants
+    ? (event._count?.participations || 0) >= event.maxParticipants
+    : false;
+
+  // 1. COMPACT VARIANT
+  if (variant === "compact") {
+    return (
+      <Link href={`/events/${event.slug}`} className="group flex gap-4 p-4 bg-white rounded-2xl border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all">
+        <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-purple-100 to-orange-100">
+          {event.images?.[0] ? (
+            <Image src={event.images[0].url} alt={event.title} fill className="object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-purple-300" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-purple-600 font-medium mb-0.5">{event.category?.name}</p>
+          <h3 className="font-semibold text-gray-900 text-sm group-hover:text-purple-600 transition-colors line-clamp-1">{event.title}</h3>
+          <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+            <Calendar className="w-3 h-3" />
+            <span>{formatDate(event.date)}</span>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className={`text-xs font-bold ${isPaid ? "text-orange-500" : "text-green-600"}`}>
+              {formatPrice(event.registrationFee)}
+            </span>
+            <Badge variant={getStatusColor(event.status)}>{event.status}</Badge>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // 2. FEATURED VARIANT
+  if (variant === "featured") {
+    return (
+      <Link href={`/events/${event.slug}`} className="group relative block rounded-3xl overflow-hidden h-80 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-orange-50">
+          {event.images?.[0] && (
+            <Image src={event.images[0].url} alt={event.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+          )}
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        {event.isFeatured && (
+          <div className="absolute top-4 left-4">
+            <span className="bg-gradient-to-r from-orange-500 to-orange-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+              ⭐ Featured
+            </span>
+          </div>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <p className="text-xs text-purple-300 font-medium mb-1">{event.category?.name}</p>
+          <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-200 transition-colors">{event.title}</h3>
+          <div className="flex items-center gap-4 text-xs text-white/70">
+            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(event.date)}</span>
+            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{event.venue}</span>
+          </div>
+          <div className="flex items-center justify-between mt-3">
+            <span className={`text-sm font-bold ${isPaid ? "text-orange-400" : "text-green-400"}`}>
+              {formatPrice(event.registrationFee)}
+            </span>
+            {event.averageRating > 0 && (
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 text-orange-400 fill-current" />
+                <span className="text-white text-xs">{event.averageRating.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // 3. DEFAULT VARIANT
+  return (
+    <Link href={`/events/${event.slug}`} className="group block bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-50 transition-all duration-300 hover:-translate-y-1">
+      <div className="relative h-48 bg-gradient-to-br from-purple-50 to-orange-50 overflow-hidden">
+        {event.images?.[0] ? (
+          <Image src={event.images[0].url} alt={event.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Calendar className="w-10 h-10 text-purple-200" />
+          </div>
+        )}
+        <div className="absolute top-3 left-3 flex gap-2">
+          <Badge variant={getStatusColor(event.status)}>{event.status}</Badge>
+          {event.isOnline && (
+            <Badge variant="outline" className="flex items-center gap-1 bg-white">
+              <Wifi className="w-3 h-3" /> Online
+            </Badge>
+          )}
+        </div>
+        {isFull && <div className="absolute top-3 right-3"><Badge variant="destructive">Full</Badge></div>}
+        {event.isFeatured && <div className="absolute bottom-3 left-3"><span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">⭐ Featured</span></div>}
+      </div>
+      
+      <div className="p-5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/20 px-2.5 py-0.5 rounded-full">{event.category?.name}</span>
+          {event.averageRating > 0 && (
+            <div className="flex items-center gap-1">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-3 h-3 ${i < Math.floor(event.averageRating) ? 'text-secondary-500 fill-current' : 'text-gray-300'}`}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">({event.totalReviews})</span>
+            </div>
+          )}
+        </div>
+
+        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 group-hover:text-purple-600 transition-colors">{event.title}</h3>
+        {event.shortDescription && <p className="text-sm text-gray-500 line-clamp-2 mb-3">{event.shortDescription}</p>}
+
+        <div className="space-y-1.5 mb-4">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <Calendar className="w-3.5 h-3.5 text-purple-400" />
+            <span>{formatDate(event.date)}</span>
+            <Clock className="w-3.5 h-3.5 text-purple-400 ml-1" />
+            <span>{event.time}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <MapPin className="w-3.5 h-3.5 text-orange-400" />
+            <span className="truncate">{event.isOnline ? "Online Event" : event.venue}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <span className={`text-base font-bold ${isPaid ? "text-orange-500" : "text-green-600"}`}>
+            {formatPrice(event.registrationFee)}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-orange-400 flex items-center justify-center text-white text-xs font-bold">
+              {event.organizer?.name?.[0] || 'U'}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export default EventCard;

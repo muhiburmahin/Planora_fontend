@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { httpClient } from '@/lib/axios/httpClient';
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/events`;
 
+// Helper for mapping fetch responses
 async function mapFetchResponse(res: Response) {
     const result = await res.json().catch(() => null);
     if (!res.ok) return { data: null, error: { message: result?.message || 'Request failed', status: res.status, raw: result } };
@@ -9,7 +11,7 @@ async function mapFetchResponse(res: Response) {
 }
 
 export const eventService = {
-    // Server-side (cookie + fetch) methods
+    // Server-side (cookie + fetch) methods for Next.js Server Actions
     server: {
         list: async (query?: Record<string, any>) => {
             try {
@@ -60,13 +62,20 @@ export const eventService = {
             try {
                 const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
+                const headers: Record<string, string> = {
+                    Cookie: cookieStore.toString(),
+                    Accept: "application/json",
+                };
+
+                const body = payload instanceof FormData ? payload : JSON.stringify(payload);
+                if (!(payload instanceof FormData)) {
+                    headers["Content-Type"] = "application/json";
+                }
+
                 const res = await fetch(`${API_URL}/create-event`, {
                     method: "POST",
-                    headers: {
-                        Cookie: cookieStore.toString(),
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
+                    headers,
+                    body,
                     cache: "no-store",
                 });
                 return await mapFetchResponse(res);
@@ -79,13 +88,20 @@ export const eventService = {
             try {
                 const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
+                const headers: Record<string, string> = {
+                    Cookie: cookieStore.toString(),
+                    Accept: "application/json",
+                };
+
+                const body = payload instanceof FormData ? payload : JSON.stringify(payload);
+                if (!(payload instanceof FormData)) {
+                    headers["Content-Type"] = "application/json";
+                }
+
                 const res = await fetch(`${API_URL}/${id}`, {
                     method: "PATCH",
-                    headers: {
-                        Cookie: cookieStore.toString(),
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
+                    headers,
+                    body,
                     cache: "no-store",
                 });
                 return await mapFetchResponse(res);
@@ -113,7 +129,7 @@ export const eventService = {
         }
     },
 
-    // Client-side helpers (axios/httpClient)
+    // Client-side helpers (using Axios)
     client: {
         list: async (params?: Record<string, any>) => {
             try {
@@ -145,11 +161,10 @@ export const eventService = {
 
         create: async (payload: any) => {
             try {
-                if (payload instanceof FormData) {
-                    const res = await httpClient.post<any>('/events/create-event', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
-                    return { data: res.data ?? res, error: null };
-                }
-                const res = await httpClient.post<any>('/events/create-event', payload);
+                const config = payload instanceof FormData 
+                    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
+                    : {};
+                const res = await httpClient.post<any>('/events/create-event', payload, config);
                 return { data: res.data ?? res, error: null };
             } catch (error) {
                 return { data: null, error };
@@ -158,11 +173,10 @@ export const eventService = {
 
         update: async (id: string, payload: any) => {
             try {
-                if (payload instanceof FormData) {
-                    const res = await httpClient.patch<any>(`/events/${id}`, payload, { headers: { 'Content-Type': 'multipart/form-data' } });
-                    return { data: res.data ?? res, error: null };
-                }
-                const res = await httpClient.patch<any>(`/events/${id}`, payload);
+                const config = payload instanceof FormData 
+                    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
+                    : {};
+                const res = await httpClient.patch<any>(`/events/${id}`, payload, config);
                 return { data: res.data ?? res, error: null };
             } catch (error) {
                 return { data: null, error };
@@ -181,4 +195,3 @@ export const eventService = {
 };
 
 export default eventService;
-

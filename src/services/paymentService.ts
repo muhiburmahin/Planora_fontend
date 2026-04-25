@@ -1,39 +1,52 @@
 ﻿import { httpClient } from '@/lib/axios/httpClient';
 import { ApiResponse } from '@/types/api.types';
 
-export interface Payment {
-  id: string;
-  participationId: string;
-  amount: number;
-  transactionId: string;
-  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
-  paidAt?: string;
-  cardType?: string;
-  bankTranId?: string;
-  valId?: string;
-  storeAmount?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface PaymentPayload {
   participationId: string;
   amount: number;
 }
 
-export interface PaymentInitResponse {
-  successUrl: string;
+export interface PaymentIntentResponse {
+  clientSecret: string;
 }
 
-const initPayment = async (payload: PaymentPayload): Promise<ApiResponse<PaymentInitResponse>> => {
-  return httpClient.post<PaymentInitResponse>('/payments/init', payload);
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/payments`;
+
+async function mapFetchResponse(res: Response) {
+  const result = await res.json().catch(() => null);
+  if (!res.ok) return { data: null, error: { message: result?.message || 'Request failed', status: res.status, raw: result } };
+  return { data: result?.data ?? result, error: null };
+}
+
+// Client-side call
+const createPaymentIntent = async (payload: PaymentPayload): Promise<ApiResponse<PaymentIntentResponse>> => {
+  return httpClient.post<PaymentIntentResponse>('/payments/create-intent', payload);
 };
 
-const verifyPayment = async (tranId: string, pId: string): Promise<ApiResponse<any>> => {
-  return httpClient.get<any>(`/payments/callback/success?tranId=${tranId}&pId=${pId}`);
+// Server-side call (for Server Actions)
+const serverCreatePaymentIntent = async (payload: PaymentPayload) => {
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const res = await fetch(`${API_URL}/create-intent`, {
+      method: 'POST',
+      headers: {
+        Cookie: cookieStore.toString(),
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    });
+    return await mapFetchResponse(res);
+  } catch (error) {
+    return { data: null, error: { message: 'Failed to create payment intent', error } };
+  }
 };
 
 export const paymentService = {
-  initPayment,
-  verifyPayment,
+  server: {
+    createPaymentIntent: serverCreatePaymentIntent,
+  },
+  createPaymentIntent,
 };

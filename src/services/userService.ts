@@ -1,6 +1,12 @@
 import { httpClient } from '@/lib/axios/httpClient';
 import { ApiResponse } from '@/types/api.types';
-import { User, UpdateUserPayload, ChangeUserStatusPayload, AdminDashboardStats, UserDashboardStats, Notification } from '@/types/user';
+import { 
+    User, 
+    UpdateUserPayload, 
+    ChangeUserStatusPayload, 
+    AdminDashboardStats, 
+    UserDashboardStats
+} from '@/types/user';
 
 // Use NEXT_PUBLIC_API_URL for server actions
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/users`;
@@ -125,6 +131,24 @@ export const userService = {
                 return { data: null, error: { message: 'Failed to fetch notifications', error } };
             }
         },
+
+        markNotificationAsRead: async (id: string) => {
+            try {
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const res = await fetch(`${API_URL}/notifications/${id}`, {
+                    method: "PATCH",
+                    headers: {
+                        Cookie: cookieStore.toString(),
+                        Accept: "application/json",
+                    },
+                    cache: "no-store",
+                });
+                return await mapFetchResponse(res);
+            } catch (error) {
+                return { data: null, error: { message: 'Failed to mark notification as read', error } };
+            }
+        },
     },
 
     // Client-side methods (use in client components)
@@ -153,6 +177,10 @@ export const userService = {
 
     getMyNotifications: async (): Promise<ApiResponse<Notification[]>> => {
         return httpClient.get<Notification[]>('/users/notifications');
+    },
+
+    markNotificationAsRead: async (id: string): Promise<ApiResponse<any>> => {
+        return httpClient.patch<any>(`/users/notifications/${id}`);
     },
 
     getUserDashboardStats: async (): Promise<ApiResponse<UserDashboardStats>> => {

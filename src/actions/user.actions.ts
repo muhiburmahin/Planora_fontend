@@ -1,7 +1,6 @@
 "use server";
 import { userService } from "@/services/userService";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { UpdateUserPayload, ChangeUserStatusPayload } from "@/types/user";
 
 // Update Profile Action
@@ -47,7 +46,7 @@ export const changeUserStatusAction = async (prevState: any, formData: FormData)
     return { success: true, message: "User status updated successfully", data: response.data };
 };
 
-// Get My Profile Action (for server components)
+// Get My Profile Action
 export const getMyProfileAction = async () => {
     const response = await userService.server.getMyProfile();
 
@@ -58,7 +57,7 @@ export const getMyProfileAction = async () => {
     return response.data;
 };
 
-// Get Dashboard Stats Action (for server components)
+// Get Dashboard Stats Action
 export const getDashboardStatsAction = async () => {
     const response = await userService.server.getDashboardStats();
 
@@ -69,7 +68,7 @@ export const getDashboardStatsAction = async () => {
     return response.data;
 };
 
-// Get All Users Action (for server components, admin only)
+// Get All Users Action (Admin only)
 export const getAllUsersAction = async () => {
     const response = await userService.server.getAllUsers();
 
@@ -80,7 +79,7 @@ export const getAllUsersAction = async () => {
     return response.data;
 };
 
-// Get My Notifications Action (for server components)
+// Get My Notifications Action
 export const getMyNotificationsAction = async () => {
     const response = await userService.server.getMyNotifications();
 
@@ -89,4 +88,16 @@ export const getMyNotificationsAction = async () => {
     }
 
     return response.data;
+};
+
+// Mark Notification as Read Action
+export const markNotificationAsReadAction = async (id: string) => {
+    const response = await userService.server.markNotificationAsRead(id);
+
+    if (response.error) {
+        return { success: false, message: response.error.message };
+    }
+
+    revalidatePath("/notifications"); // এখানে আপনার নোটিফিকেশন পেজের পাথটি দিবেন
+    return { success: true, message: "Notification marked as read", data: response.data };
 };

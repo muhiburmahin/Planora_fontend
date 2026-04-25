@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 import { ChevronRight, ArrowUpRight } from 'lucide-react';
-import { CATEGORIES_DATA } from '@/constants/categories';
 import { CategoryUI } from '@/types/category';
 
 const DynamicIcon = ({ name, className }: { name: string; className?: string }) => {
@@ -19,7 +18,7 @@ export interface CategoriesSectionProps {
 }
 
 export const CategoriesSection = ({ initialCategories }: CategoriesSectionProps) => {
-    const displayCategories = (initialCategories && initialCategories.length) ? initialCategories.slice(0, 4) : CATEGORIES_DATA.slice(0, 4);
+    const displayCategories = initialCategories ?? [];
 
     return (
         <section className="py-20 md:py-28 px-4 bg-white dark:bg-slate-950 transition-colors duration-500 border-b border-slate-100 dark:border-slate-900">
@@ -60,7 +59,7 @@ export const CategoriesSection = ({ initialCategories }: CategoriesSectionProps)
 
                 {/* Category Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                    {displayCategories.map((category: CategoryUI, index: number) => (
+                    {displayCategories.map((category: any, index: number) => (
                         <motion.div
                             key={category.id}
                             initial={{ opacity: 0, scale: 0.95 }}

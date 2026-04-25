@@ -56,6 +56,24 @@ export const reviewService = {
             }
         },
 
+        getSingleReview: async (id: string) => {
+            try {
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const res = await fetch(`${API_URL}/${id}`, {
+                    method: "GET",
+                    headers: {
+                        Cookie: cookieStore.toString(),
+                        Accept: "application/json",
+                    },
+                    cache: "no-store",
+                });
+                return await mapFetchResponse(res);
+            } catch (error) {
+                return { data: null, error: { message: 'Failed to fetch review', error } };
+            }
+        },
+
         getReviewStats: async (eventId: string) => {
             try {
                 const { cookies } = await import("next/headers");
@@ -158,31 +176,23 @@ export const reviewService = {
         return httpClient.post<Review>('/reviews', payload);
     },
 
-    getEventReviews: async (
-        eventId: string,
-        options?: ReviewOptions
-    ): Promise<ApiResponse<ReviewResponse>> => {
-        return httpClient.get<ReviewResponse>(`/reviews/${eventId}`, {
-            params: options
-        });
+    getEventReviews: async (eventId: string, options?: ReviewOptions): Promise<ApiResponse<ReviewResponse>> => {
+        return httpClient.get<ReviewResponse>(`/reviews/${eventId}`, { params: options });
+    },
+
+    getSingleReview: async (id: string): Promise<ApiResponse<Review>> => {
+        return httpClient.get<Review>(`/reviews/${id}`);
     },
 
     getReviewStats: async (eventId: string): Promise<ApiResponse<ReviewStats>> => {
         return httpClient.get<ReviewStats>(`/reviews/stats/${eventId}`);
     },
 
-    getMyReviews: async (
-        options?: ReviewOptions
-    ): Promise<ApiResponse<ReviewResponse>> => {
-        return httpClient.get<ReviewResponse>('/reviews/my-reviews', {
-            params: options
-        });
+    getMyReviews: async (options?: ReviewOptions): Promise<ApiResponse<ReviewResponse>> => {
+        return httpClient.get<ReviewResponse>('/reviews/my-reviews', { params: options });
     },
 
-    updateReview: async (
-        id: string,
-        payload: UpdateReviewPayload
-    ): Promise<ApiResponse<Review>> => {
+    updateReview: async (id: string, payload: UpdateReviewPayload): Promise<ApiResponse<Review>> => {
         return httpClient.patch<Review>(`/reviews/${id}`, payload);
     },
 

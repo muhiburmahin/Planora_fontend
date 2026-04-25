@@ -1,7 +1,6 @@
 "use server";
 import { reviewService } from "@/services/reviewService";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { CreateReviewPayload, UpdateReviewPayload, ReviewOptions } from "@/types/review";
 
 // Create Review Action
@@ -69,6 +68,17 @@ export const deleteReviewByAdminAction = async (id: string) => {
 // Get Event Reviews Action (for server components)
 export const getEventReviewsAction = async (eventId: string, options?: ReviewOptions) => {
     const response = await reviewService.server.getEventReviews(eventId, options);
+
+    if (response.error) {
+        throw new Error(response.error.message);
+    }
+
+    return response.data;
+};
+
+// Get Single Review Action (NEW)
+export const getSingleReviewAction = async (id: string) => {
+    const response = await reviewService.server.getSingleReview(id);
 
     if (response.error) {
         throw new Error(response.error.message);

@@ -16,6 +16,6 @@ export const createPaymentIntentAction = async (prevState: any, formData: FormDa
     return { success: false, message: response.error.message };
   }
 
-  
+ 
   return { success: true, message: 'Payment intent created successfully', data: response.data };
 };
