@@ -148,6 +148,9 @@ export const categoryService = {
     getSingleCategory: async (slug: string): Promise<ApiResponse<any>> => {
         return httpClient.get<any>(`/categories/${slug}`);
     },
+    getCategoryById: async (slug: string): Promise<ApiResponse<any>> => {
+        return httpClient.get<any>(`/categories/${slug}`);
+    },
 
     createCategory: async (payload: any): Promise<ApiResponse<any>> => {
         if (payload instanceof FormData) {

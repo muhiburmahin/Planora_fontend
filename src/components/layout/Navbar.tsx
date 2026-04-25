@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     CalendarDays, PlusCircle, User,
     Search, Bell, LogOut, LayoutDashboard,
-    Menu, X, Home, Settings, CreditCard, ShieldCheck
+    Menu, X, Home, Settings, CreditCard, ShieldCheck, LayoutGrid
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -219,7 +219,7 @@ const Navbar = () => {
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
                                                         <Link href="/admin/categories" className="flex items-center gap-3 py-2.5 cursor-pointer rounded-lg font-medium">
-                                                            <Grid size={16} className="text-primary-500" /> Category Management
+                                                            <LayoutGrid size={16} className="text-primary-500" /> Category Management
                                                         </Link>
                                                     </DropdownMenuItem>
                                                 </>

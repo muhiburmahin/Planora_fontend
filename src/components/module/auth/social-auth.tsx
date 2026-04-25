@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { signIn } from "next-auth/react"
 
 export const SocialAuth = () => {
     const [isLoading, setIsLoading] = React.useState(false)

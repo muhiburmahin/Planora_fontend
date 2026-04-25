@@ -7,7 +7,7 @@ export const useGetMyEvents = () => {
         queryKey: ['my-events'],
         queryFn: async (): Promise<Event[]> => {
             const response = await eventService.getMyEvents();
-            return response.data || [];
+            return response.data ?? [];
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
@@ -18,7 +18,7 @@ export const useGetEventById = (id: string) => {
         queryKey: ['event', id],
         queryFn: async (): Promise<Event> => {
             const response = await eventService.getEventById(id);
-            return response.data;
+            return response.data as Event;
         },
         enabled: !!id,
         staleTime: 5 * 60 * 1000, // 5 minutes
@@ -30,7 +30,7 @@ export const useGetEventsByCategory = (categorySlug: string, filters?: any) => {
         queryKey: ['events', 'category', categorySlug, filters],
         queryFn: async (): Promise<Event[]> => {
             const response = await eventService.client.getEventsByCategory(categorySlug, filters);
-            return response.data || [];
+            return response.data?.data ?? [];
         },
         enabled: !!categorySlug,
         staleTime: 2 * 60 * 1000, // 2 minutes

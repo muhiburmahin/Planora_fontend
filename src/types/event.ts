@@ -37,3 +37,19 @@ export interface Event {
   updatedAt: string;
   _count?: { participations: number };
 }
+
+export interface CreateEventPayload {
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  venue: string;
+  categoryId: string;
+  type?: EventType;
+  registrationFee?: number;
+  isOnline?: boolean;
+  maxParticipants?: number;
+  shortDescription?: string;
+}
+
+export interface UpdateEventPayload extends Partial<CreateEventPayload> {}

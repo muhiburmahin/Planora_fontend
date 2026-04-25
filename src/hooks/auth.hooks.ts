@@ -22,7 +22,7 @@ export const useLoginMutation = () => {
             queryClient.invalidateQueries({ queryKey: ["user-me"] });
         },
         onError: (error: any) => {
-            toast.error(error || "Login failed!");
+            toast.error(error?.message || "Login failed!");
         }
     });
 

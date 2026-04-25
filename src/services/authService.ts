@@ -83,6 +83,40 @@ export const authService = {
                 return { data: null, error: { message: "Failed to reset password", error } };
             }
         },
+        changePassword: async (oldPassword: string, newPassword: string) => {
+            try {
+                const cookieStore = await cookies();
+                const res = await fetch(`${API_URL}/change-password`, {
+                    method: "POST",
+                    headers: {
+                        Cookie: cookieStore.toString(),
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({ oldPassword, newPassword }),
+                    cache: "no-store",
+                });
+                return await mapFetchResponse(res);
+            } catch (error) {
+                return { data: null, error: { message: "Failed to change password", error } };
+            }
+        },
+        refreshToken: async () => {
+            try {
+                const cookieStore = await cookies();
+                const res = await fetch(`${API_URL}/refresh-token`, {
+                    method: "POST",
+                    headers: {
+                        Cookie: cookieStore.toString(),
+                        Accept: "application/json",
+                    },
+                    cache: "no-store",
+                });
+                return await mapFetchResponse(res);
+            } catch (error) {
+                return { data: null, error: { message: "Failed to refresh token", error } };
+            }
+        },
         logout: async () => {
             try {
                 const cookieStore = await cookies();

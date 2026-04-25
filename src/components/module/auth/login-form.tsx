@@ -43,8 +43,9 @@ export const LoginForm = () => {
                 router.push("/dashboard")
             },
             onError: (error: any) => {
-                setGlobalError(error)
-                toast.error(error)
+                const message = error?.message || "Login failed"
+                setGlobalError(message)
+                toast.error(message)
             }
         })
     }

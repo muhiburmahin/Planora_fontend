@@ -134,7 +134,7 @@ export const eventService = {
         list: async (params?: Record<string, any>) => {
             try {
                 const res = await httpClient.get<any>('/events', { params });
-                return { data: res.data ?? res, error: null };
+                return { data: res, error: null };
             } catch (error) {
                 return { data: null, error };
             }
@@ -143,7 +143,7 @@ export const eventService = {
         getById: async (id: string) => {
             try {
                 const res = await httpClient.get<any>(`/events/${id}`);
-                return { data: res.data ?? res, error: null };
+                return { data: res, error: null };
             } catch (error) {
                 return { data: null, error };
             }
@@ -153,7 +153,7 @@ export const eventService = {
             try {
                 const params = { categorySlug, ...filters };
                 const res = await httpClient.get<any>('/events', { params });
-                return { data: res.data ?? res, error: null };
+                return { data: res, error: null };
             } catch (error) {
                 return { data: null, error };
             }
@@ -165,7 +165,7 @@ export const eventService = {
                     ? { headers: { 'Content-Type': 'multipart/form-data' } } 
                     : {};
                 const res = await httpClient.post<any>('/events/create-event', payload, config);
-                return { data: res.data ?? res, error: null };
+                return { data: res, error: null };
             } catch (error) {
                 return { data: null, error };
             }
@@ -177,7 +177,7 @@ export const eventService = {
                     ? { headers: { 'Content-Type': 'multipart/form-data' } } 
                     : {};
                 const res = await httpClient.patch<any>(`/events/${id}`, payload, config);
-                return { data: res.data ?? res, error: null };
+                return { data: res, error: null };
             } catch (error) {
                 return { data: null, error };
             }
@@ -186,12 +186,33 @@ export const eventService = {
         remove: async (id: string) => {
             try {
                 const res = await httpClient.delete<any>(`/events/${id}`);
-                return { data: res.data ?? res, error: null };
+                return { data: res, error: null };
             } catch (error) {
                 return { data: null, error };
             }
         }
-    }
+    },
+    // Backward-compatible aliases
+    getMyEvents: async () => {
+        const response = await eventService.client.list({ myEvents: true });
+        return { data: response.data?.data ?? [], error: response.error };
+    },
+    getEventById: async (id: string) => {
+        const response = await eventService.client.getById(id);
+        return { data: response.data?.data ?? null, error: response.error };
+    },
+    createEvent: async (payload: any) => {
+        const response = await eventService.client.create(payload);
+        return { data: response.data?.data ?? null, error: response.error };
+    },
+    updateEvent: async (id: string, payload: any) => {
+        const response = await eventService.client.update(id, payload);
+        return { data: response.data?.data ?? null, error: response.error };
+    },
+    deleteEvent: async (id: string) => {
+        const response = await eventService.client.remove(id);
+        return { data: response.data?.data ?? null, error: response.error };
+    },
 };
 
 export default eventService;

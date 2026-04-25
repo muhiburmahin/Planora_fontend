@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { LayoutGrid, LayoutList, Loader2, Frown, Sparkles } from "lucide-react";
 import EventCard from "./EventCard";
 import EventFilters from "./EventFilters";
+import eventService from "@/services/eventService";
+import categoryService from "@/services/categoryService";
 
 interface Event {
   id: string;
@@ -54,15 +56,18 @@ export default function EventsPage() {
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("page", currentPage.toString());
-      params.set("limit", "12");
+      const query: Record<string, string | number> = {
+        page: currentPage,
+        limit: 12,
+      };
+      searchParams.forEach((value, key) => {
+        query[key] = value;
+      });
 
-      const res = await fetch(`/api/events?${params.toString()}`);
-      const data = await res.json();
-      if (data.success) {
-        setEvents(data.data.data);
-        setMeta(data.data.meta);
+      const response = await eventService.client.list(query);
+      if (!response.error && response.data) {
+        setEvents(response.data?.data ?? []);
+        setMeta(response.data?.meta ?? null);
       }
     } catch (err) {
       console.error("Failed to fetch events:", err);
@@ -73,9 +78,10 @@ export default function EventsPage() {
 
   const fetchFeatured = useCallback(async () => {
     try {
-      const res = await fetch("/api/events?isFeatured=true&limit=4&status=UPCOMING");
-      const data = await res.json();
-      if (data.success) setFeaturedEvents(data.data.data);
+      const response = await eventService.client.list({ isFeatured: true, limit: 4, status: "UPCOMING" });
+      if (!response.error && response.data) {
+        setFeaturedEvents(response.data?.data ?? []);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -83,9 +89,10 @@ export default function EventsPage() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await fetch("/api/categories?isActive=true&limit=50");
-      const data = await res.json();
-      if (data.success) setCategories(data.data.data);
+      const response = await categoryService.getAllCategories({ isActive: true }, { limit: 50 });
+      if (response?.success) {
+        setCategories(response.data?.data ?? response.data ?? []);
+      }
     } catch (err) {
       console.error(err);
     }

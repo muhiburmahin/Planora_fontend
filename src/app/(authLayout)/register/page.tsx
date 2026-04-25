@@ -5,7 +5,7 @@ import Link from "next/link"
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-primary-subtle p-4 py-10">
+    <div className="w-full py-6">
       <div className="flex flex-col items-center">
         <AuthCard title="Create Account" description="Start managing your events with Planora today.">
           <RegisterForm />
