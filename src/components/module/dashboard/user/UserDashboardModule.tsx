@@ -11,9 +11,9 @@ export async function UserDashboardModule() {
         <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <StatCard title="Organized Events" value={stats.myOrganizedEvents ?? 0} hint="Events you created" tone="primary" icon={<CalendarClock size={16} />} />
-                <StatCard title="Joined Events" value={stats.myJoinedEvents ?? 0} hint="Registered participations" tone="success" icon={<Ticket size={16} />} />
-                <StatCard title="Reviews Given" value={stats.totalReviewsGiven ?? 0} hint="Feedback submitted" tone="dark" icon={<MessageSquare size={16} />} />
-                <StatCard title="Pending Invitations" value={stats.pendingInvitations ?? 0} hint="Awaiting response" tone="info" icon={<ListTodo size={16} />} />
+                <StatCard title="Joined Events" value={stats.myJoinedEvents ?? 0} hint="Registered participations" tone="secondary" icon={<Ticket size={16} />} />
+                <StatCard title="Reviews Given" value={stats.totalReviewsGiven ?? 0} hint="Feedback submitted" tone="tertiary" icon={<MessageSquare size={16} />} />
+                <StatCard title="Pending Invitations" value={stats.pendingInvitations ?? 0} hint="Awaiting response" tone="accent" icon={<ListTodo size={16} />} />
             </div>
 
             <div className="grid gap-5 lg:grid-cols-2">

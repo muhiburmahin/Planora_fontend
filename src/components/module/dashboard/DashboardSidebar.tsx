@@ -15,8 +15,6 @@ import {
     Ticket,
     MessageSquare,
     Tags,
-    ChevronsUpDown,
-    ShieldCheck,
 } from "lucide-react";
 import {
     Sidebar,
@@ -103,7 +101,7 @@ export function DashboardSidebar({ user, children }: DashboardSidebarProps) {
         .join("");
 
     return (
-        <SidebarProvider defaultOpen className="min-h-[calc(100svh-8rem)]">
+        <SidebarProvider defaultOpen className="min-h-screen">
             <Sidebar
                 variant="inset"
                 collapsible="icon"
@@ -203,31 +201,8 @@ export function DashboardSidebar({ user, children }: DashboardSidebarProps) {
                 </SidebarFooter>
             </Sidebar>
 
-            <SidebarInset className="min-w-0 rounded-2xl border border-primary-100/70 bg-gradient-to-br from-white/90 via-primary-50/70 to-secondary-50/60 p-3 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:from-slate-900/80 dark:via-slate-900/70 dark:to-slate-950/80">
-                <div className="flex items-center justify-between rounded-xl border border-primary-100/70 bg-white/90 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/90">
-                    <div className="flex items-center gap-2">
-                        <SidebarTrigger className="h-8 w-8 rounded-md border border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-slate-700 dark:text-primary-300 dark:hover:bg-slate-800" />
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Dashboard</p>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{pageTitle}</p>
-                        </div>
-                    </div>
-                    <div className="hidden items-center gap-2 md:flex">
-                        {role === "ADMIN" ? (
-                            <Badge variant="outline" className="gap-1 border-primary-200 text-primary-700 dark:border-slate-700 dark:text-primary-300">
-                                <ShieldCheck className="h-3.5 w-3.5" />
-                                Admin
-                            </Badge>
-                        ) : null}
-                        <Button variant="outline" size="sm" className="gap-2 border-primary-200 dark:border-slate-700">
-                            {userInitials || "U"}
-                            <span className="max-w-32 truncate">{user.name}</span>
-                            <ChevronsUpDown className="h-3.5 w-3.5 opacity-60" />
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="mt-4 min-w-0">{children}</div>
+            <SidebarInset className="min-w-0 flex flex-col">
+                <div className="mt-4 min-w-0 flex-1">{children}</div>
             </SidebarInset>
         </SidebarProvider>
     );

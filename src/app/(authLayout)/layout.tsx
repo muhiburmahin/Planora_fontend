@@ -4,6 +4,8 @@ import Link from "next/link";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen bg-gradient-primary-subtle text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+             <Navbar />
+            
             <div className="relative px-4 pb-10 pt-28 sm:px-6 lg:px-8">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1fr_460px] lg:items-center">
                     <div className="hidden rounded-3xl border border-primary-100/70 bg-white/70 p-8 shadow-sm backdrop-blur lg:block dark:border-slate-800 dark:bg-slate-900/70">
@@ -26,7 +28,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                         </Link>
                     </div>
                     <div>
-                        <Navbar />
+                       
                         {children}</div>
                 </div>
             </div>

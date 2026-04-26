@@ -40,7 +40,7 @@ export const LoginForm = () => {
         login(data, {
             onSuccess: (res: any) => {
                 toast.success(res.message || "Welcome back to Planora!")
-                router.push("/")
+                router.push("/dashboard")
             },
             onError: (error: any) => {
                 const message = error?.message || "Login failed"

@@ -19,6 +19,7 @@ import {
 import {
   Bell,
   CalendarDays,
+  Home,
   LayoutDashboard,
   MessageSquare,
   Settings,
@@ -128,6 +129,25 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                   </SidebarMenuItem>
                 );
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="px-2 py-3 mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Back to Home"
+                  className="text-slate-600 hover:bg-primary-50 hover:text-primary-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-primary-300"
+                >
+                  <Link href="/" onClick={() => setOpenMobile(false)}>
+                    <Home className="h-4 w-4" />
+                    <span>Back to Home</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
