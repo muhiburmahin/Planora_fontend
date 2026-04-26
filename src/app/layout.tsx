@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { GeistSans, GeistMono } from 'geist/font';
-
 import { ThemeProvider } from '@/providers/themeProvider';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import { Toaster } from 'sonner';
 import QueryProvider from '@/providers/query-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
     title: 'Planora - Professional Event Management Platform',
@@ -28,11 +28,12 @@ export default function RootLayout({
                         defaultTheme="system"
                         enableSystem
                     >
-                        <Navbar />
-                        <main>
-                            {children}
-                        </main>
-                        <Toaster position="top-right" richColors />
+                        <TooltipProvider>
+                            <main>
+                                {children}
+                            </main>
+                            <Toaster position="top-right" richColors />
+                        </TooltipProvider>
                     </ThemeProvider>
                 </QueryProvider>
             </body>

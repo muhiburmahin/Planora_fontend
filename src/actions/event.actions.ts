@@ -2,11 +2,22 @@
 import eventService from '@/services/eventService';
 import { revalidatePath } from 'next/cache';
 
+const getReadableMessage = (error: any) => {
+  const sources = error?.raw?.errorSources;
+  if (Array.isArray(sources) && sources.length > 0) {
+    const first = sources[0];
+    if (first?.path && first?.message) return `${first.path}: ${first.message}`;
+    if (first?.message) return first.message;
+  }
+  return error?.message || 'Request failed';
+};
+
 export const createEventAction = async (prevState: any, formData: FormData) => {
   const response = await eventService.server.create(formData as any);
 
   if (response.error) {
-    return { success: false, message: response.error.message };
+    const errorObj = response.error as any;
+    return { success: false, message: getReadableMessage(errorObj), errorSources: errorObj?.raw?.errorSources ?? [] };
   }
 
   revalidatePath('/events');
@@ -23,7 +34,8 @@ export const updateEventAction = async (prevState: any, formData: FormData) => {
   const response = await eventService.server.update(id, formData as any);
 
   if (response.error) {
-    return { success: false, message: response.error.message };
+    const errorObj = response.error as any;
+    return { success: false, message: getReadableMessage(errorObj), errorSources: errorObj?.raw?.errorSources ?? [] };
   }
 
   revalidatePath(`/events/${id}`);
@@ -36,7 +48,8 @@ export const deleteEventAction = async (id: string) => {
   const response = await eventService.server.remove(id);
 
   if (response.error) {
-    return { success: false, message: response.error.message };
+    const errorObj = response.error as any;
+    return { success: false, message: getReadableMessage(errorObj), errorSources: errorObj?.raw?.errorSources ?? [] };
   }
 
   revalidatePath('/events');

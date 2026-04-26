@@ -6,20 +6,28 @@ interface StatCardProps {
     value: string | number;
     hint?: string;
     icon?: ReactNode;
+    tone?: "primary" | "success" | "dark" | "info";
 }
 
-export function StatCard({ title, value, hint, icon }: StatCardProps) {
+const toneClasses: Record<NonNullable<StatCardProps["tone"]>, string> = {
+    primary: "from-primary-600 to-primary-500",
+    success: "from-emerald-600 to-emerald-500",
+    dark: "from-slate-800 to-slate-700",
+    info: "from-blue-600 to-blue-500",
+};
+
+export function StatCard({ title, value, hint, icon, tone = "primary" }: StatCardProps) {
     return (
-        <Card className="border-primary-100/70 bg-white/90 shadow-sm">
+        <Card className={`overflow-hidden border-none bg-gradient-to-r text-white shadow-lg ${toneClasses[tone]}`}>
             <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">{title}</p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
-                        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/75">{title}</p>
+                        <p className="mt-2 text-4xl font-extrabold tracking-tight text-white">{value}</p>
+                        {hint ? <p className="mt-1 text-xs text-white/80">{hint}</p> : null}
                     </div>
                     {icon ? (
-                        <div className="rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 p-2 text-white">
+                        <div className="rounded-xl border border-white/20 bg-white/15 p-2.5 text-white backdrop-blur-sm">
                             {icon}
                         </div>
                     ) : null}

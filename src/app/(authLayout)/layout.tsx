@@ -1,3 +1,4 @@
+import { Navbar } from "@/components/layout";
 import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -24,7 +25,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                             Browse public events
                         </Link>
                     </div>
-                    <div>{children}</div>
+                    <div>
+                        <Navbar />
+                        {children}</div>
                 </div>
             </div>
         </div>

@@ -1,3 +1,5 @@
+import { Navbar } from "@/components/layout";
+
 export default function RootLayout({
     children,
 }: {
@@ -5,6 +7,7 @@ export default function RootLayout({
 }) {
     return (
         <div className="relative">
+            <Navbar />
             {children}
         </div>
     );

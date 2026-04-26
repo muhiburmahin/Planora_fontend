@@ -69,13 +69,18 @@ export const categoryService = {
             try {
                 const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
+                const headers: Record<string, string> = {
+                    Cookie: cookieStore.toString(),
+                    Accept: "application/json",
+                };
+                const body = payload instanceof FormData ? payload : JSON.stringify(payload);
+                if (!(payload instanceof FormData)) {
+                    headers["Content-Type"] = "application/json";
+                }
                 const res = await fetch(`${API_URL}/create-category`, {
                     method: "POST",
-                    headers: {
-                        Cookie: cookieStore.toString(),
-                        Accept: "application/json",
-                    },
-                    body: payload instanceof FormData ? payload : JSON.stringify(payload),
+                    headers,
+                    body,
                     cache: "no-store",
                 });
                 return await mapFetchResponse(res);
@@ -88,13 +93,18 @@ export const categoryService = {
             try {
                 const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
+                const headers: Record<string, string> = {
+                    Cookie: cookieStore.toString(),
+                    Accept: "application/json",
+                };
+                const body = payload instanceof FormData ? payload : JSON.stringify(payload);
+                if (!(payload instanceof FormData)) {
+                    headers["Content-Type"] = "application/json";
+                }
                 const res = await fetch(`${API_URL}/${id}`, {
                     method: "PATCH",
-                    headers: {
-                        Cookie: cookieStore.toString(),
-                        Accept: "application/json",
-                    },
-                    body: payload instanceof FormData ? payload : JSON.stringify(payload),
+                    headers,
+                    body,
                     cache: "no-store",
                 });
                 return await mapFetchResponse(res);

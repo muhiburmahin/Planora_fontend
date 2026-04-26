@@ -20,7 +20,11 @@ export const authClient: any = {
     },
     register: async (payload: RegisterPayload) => {
         const res = await httpClient.post<any>("/auth/register", payload);
-        if (res?.data?.accessToken) setTokens(res.data.accessToken, res.data.refreshToken);
+        // Registration must not auto-login before email verification.
+        try {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+        } catch { }
         return res;
     },
     getMe: async () => {

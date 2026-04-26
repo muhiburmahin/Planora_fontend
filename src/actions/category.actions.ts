@@ -1,8 +1,21 @@
 "use server";
 import { categoryService } from "@/services/categoryService";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { CreateCategoryPayload, UpdateCategoryPayload } from "@/types/category";
+
+const getReadableMessage = (error: any) => {
+    const sources = error?.raw?.errorSources;
+    if (Array.isArray(sources) && sources.length > 0) {
+        const first = sources[0];
+        if (first?.path && first?.message) {
+            return `${first.path}: ${first.message}`;
+        }
+        if (first?.message) {
+            return first.message;
+        }
+    }
+    return error?.message || "Request failed";
+};
 
 // Create Category Action
 export const createCategoryAction = async (prevState: any, formData: FormData) => {
@@ -17,7 +30,8 @@ export const createCategoryAction = async (prevState: any, formData: FormData) =
     const response = await categoryService.server.createCategory(payload);
 
     if (response.error) {
-        return { success: false, message: response.error.message };
+        const errorObj = response.error as any;
+        return { success: false, message: getReadableMessage(errorObj), errorSources: errorObj?.raw?.errorSources ?? [] };
     }
 
     revalidatePath("/admin/categories");
@@ -40,7 +54,8 @@ export const updateCategoryAction = async (prevState: any, formData: FormData) =
     const response = await categoryService.server.updateCategory(id, payload);
 
     if (response.error) {
-        return { success: false, message: response.error.message };
+        const errorObj = response.error as any;
+        return { success: false, message: getReadableMessage(errorObj), errorSources: errorObj?.raw?.errorSources ?? [] };
     }
 
     revalidatePath("/admin/categories");
@@ -56,7 +71,8 @@ export const toggleCategoryStatusAction = async (prevState: any, formData: FormD
     const response = await categoryService.server.toggleCategoryStatus(id);
 
     if (response.error) {
-        return { success: false, message: response.error.message };
+        const errorObj = response.error as any;
+        return { success: false, message: getReadableMessage(errorObj), errorSources: errorObj?.raw?.errorSources ?? [] };
     }
 
     revalidatePath("/admin/categories");
@@ -71,7 +87,8 @@ export const deleteCategoryAction = async (prevState: any, formData: FormData) =
     const response = await categoryService.server.deleteCategory(id);
 
     if (response.error) {
-        return { success: false, message: response.error.message };
+        const errorObj = response.error as any;
+        return { success: false, message: getReadableMessage(errorObj), errorSources: errorObj?.raw?.errorSources ?? [] };
     }
 
     revalidatePath("/admin/categories");

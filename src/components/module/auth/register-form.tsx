@@ -38,8 +38,8 @@ export const RegisterForm = () => {
             const res = await authClient.register({ name: data.name, email: data.email, password: data.password })
             // httpClient returns an ApiResponse on success, and throws a customError on failure
             if (res && (res as any).success) {
-                toast.success("Account created successfully! Please verify your email.")
-                router.push('/login')
+                toast.success("Please verify your email first, then sign in.")
+                router.push('/login?verifyEmail=1')
             } else {
                 // Handle unexpected shape
                 const msg = (res as any)?.message || 'Registration failed'
@@ -56,8 +56,14 @@ export const RegisterForm = () => {
     }
 
     const onInvalid = () => {
-        const firstMessage = Object.values(errors)[0]?.message;
-        toast.error(firstMessage || "Please fix the highlighted registration fields.");
+        const messages = Object.values(errors)
+            .map((item) => item?.message)
+            .filter((item): item is string => Boolean(item));
+        if (messages.length === 0) {
+            toast.error("Please fix the highlighted registration fields.");
+            return;
+        }
+        messages.slice(0, 2).forEach((message) => toast.error(message));
     };
 
     return (

@@ -2,8 +2,17 @@
 import { AuthCard } from "@/components/module/auth/auth-card"
 import { LoginForm } from "@/components/module/auth/login-form"
 import Link from "next/link"
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verifyEmail") === "1") {
+      toast.success("Please verify your email from inbox, then login.");
+    }
+  }, []);
+
   return (
     <div className="w-full py-6">
       <div className="flex flex-col items-center">
