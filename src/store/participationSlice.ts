@@ -1,5 +1,6 @@
 ﻿import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { participationService, Participation, ParticipationResponse } from '@/services/participationService';
+import { participationService } from '@/services/participationService';
+import { Participation, ParticipationResponse, UpdateStatusPayload } from '@/types/participition';
 
 interface ParticipationState {
   participations: Participation[];
@@ -55,7 +56,7 @@ export const fetchSingleParticipation = createAsyncThunk(
 
 export const updateParticipationStatus = createAsyncThunk(
   'participations/updateStatus',
-  async ({ id, status }: { id: string; status: string }) => {
+  async ({ id, status }: { id: string; status: UpdateStatusPayload['status'] }) => {
     const response = await participationService.updateStatus(id, { status });
     return response.data;
   }

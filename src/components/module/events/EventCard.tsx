@@ -29,7 +29,7 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, variant = "default" }: EventCardProps) {
-  const coverImage = event.images?.[0]?.url || "/placeholder-event.jpg";
+  const coverImage = event.images?.[0]?.url || "/placeholder-event.svg";
   const isFree = event.registrationFee === 0;
   const isUpcoming = event.status === "UPCOMING";
   const isCancelled = event.status === "CANCELLED";

@@ -5,7 +5,8 @@ import {
     UpdateUserPayload, 
     ChangeUserStatusPayload, 
     AdminDashboardStats, 
-    UserDashboardStats
+    UserDashboardStats,
+    Notification
 } from '@/types/user';
 
 // Use NEXT_PUBLIC_API_URL for server actions

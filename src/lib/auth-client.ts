@@ -8,6 +8,8 @@ const setTokens = (accessToken?: string | null, refreshToken?: string | null) =>
     if (typeof window === "undefined") return;
     if (accessToken) localStorage.setItem("accessToken", accessToken);
     if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+    if (accessToken) document.cookie = `accessToken=${accessToken}; path=/; max-age=604800; samesite=lax`;
+    if (refreshToken) document.cookie = `refreshToken=${refreshToken}; path=/; max-age=2592000; samesite=lax`;
 };
 
 export const authClient: any = {
@@ -39,6 +41,10 @@ export const authClient: any = {
         try {
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
+        } catch { }
+        try {
+            document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+            document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         } catch { }
 
         return { success: true }

@@ -1,0 +1,11 @@
+<svg width="800" height="500" viewBox="0 0 800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6D28D9"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <text x="400" y="245" text-anchor="middle" fill="white" font-size="42" font-family="Arial, sans-serif" font-weight="700">Planora</text>
+  <text x="400" y="285" text-anchor="middle" fill="white" fill-opacity="0.9" font-size="22" font-family="Arial, sans-serif">Image placeholder</text>
+</svg>

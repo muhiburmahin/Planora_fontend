@@ -50,9 +50,14 @@ export const LoginForm = () => {
         })
     }
 
+    const onInvalid = () => {
+        const firstMessage = Object.values(errors)[0]?.message;
+        toast.error(firstMessage || "Please fix the highlighted login fields.");
+    };
+
     return (
         <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
             className="space-y-5"
             noValidate
         >

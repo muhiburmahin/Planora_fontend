@@ -33,8 +33,8 @@ export const getAllCategoriesAsync = createAsyncThunk<
     async ({ filters, options }, { rejectWithValue }) => {
         try {
             const response = await categoryService.getAllCategories(filters, options);
-            if (response.error) {
-                return rejectWithValue(response.error.message);
+            if (!response.success || !response.data) {
+                return rejectWithValue(response.message || 'Failed to fetch categories');
             }
             return response.data;
         } catch (error) {
@@ -52,8 +52,8 @@ export const getSingleCategoryAsync = createAsyncThunk<
     async (slug, { rejectWithValue }) => {
         try {
             const response = await categoryService.getSingleCategory(slug);
-            if (response.error) {
-                return rejectWithValue(response.error.message);
+            if (!response.success || !response.data) {
+                return rejectWithValue(response.message || 'Failed to fetch category');
             }
             return response.data;
         } catch (error) {
@@ -71,8 +71,8 @@ export const createCategoryAsync = createAsyncThunk<
     async (payload, { rejectWithValue }) => {
         try {
             const response = await categoryService.createCategory(payload);
-            if (response.error) {
-                return rejectWithValue(response.error.message);
+            if (!response.success || !response.data) {
+                return rejectWithValue(response.message || 'Failed to create category');
             }
             return response.data;
         } catch (error) {
@@ -90,8 +90,8 @@ export const updateCategoryAsync = createAsyncThunk<
     async ({ id, payload }, { rejectWithValue }) => {
         try {
             const response = await categoryService.updateCategory(id, payload);
-            if (response.error) {
-                return rejectWithValue(response.error.message);
+            if (!response.success || !response.data) {
+                return rejectWithValue(response.message || 'Failed to update category');
             }
             return response.data;
         } catch (error) {
@@ -109,8 +109,8 @@ export const toggleCategoryStatusAsync = createAsyncThunk<
     async (id, { rejectWithValue }) => {
         try {
             const response = await categoryService.toggleCategoryStatus(id);
-            if (response.error) {
-                return rejectWithValue(response.error.message);
+            if (!response.success || !response.data) {
+                return rejectWithValue(response.message || 'Failed to toggle category status');
             }
             return response.data;
         } catch (error) {
@@ -128,8 +128,8 @@ export const deleteCategoryAsync = createAsyncThunk<
     async (id, { rejectWithValue }) => {
         try {
             const response = await categoryService.deleteCategory(id);
-            if (response.error) {
-                return rejectWithValue(response.error.message);
+            if (!response.success) {
+                return rejectWithValue(response.message || 'Failed to delete category');
             }
             return id;
         } catch (error) {

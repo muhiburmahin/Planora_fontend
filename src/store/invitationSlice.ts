@@ -1,5 +1,5 @@
 import { invitationService } from '@/services/invitationService';
-import { Invitation, InvitationFilterRequest, RespondInvitationPayload, SendInvitationPayload } from '@/types/invitation';
+import { Invitation, InvitationFilterRequest, InvitationOptions, InvitationResponse, RespondInvitationPayload, SendInvitationPayload } from '@/types/invitation';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 interface InvitationState {

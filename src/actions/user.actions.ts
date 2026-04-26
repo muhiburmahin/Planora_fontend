@@ -98,6 +98,6 @@ export const markNotificationAsReadAction = async (id: string) => {
         return { success: false, message: response.error.message };
     }
 
-    revalidatePath("/notifications"); // এখানে আপনার নোটিফিকেশন পেজের পাথটি দিবেন
+    revalidatePath("/notifications"); 
     return { success: true, message: "Notification marked as read", data: response.data };
 };

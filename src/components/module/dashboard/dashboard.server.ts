@@ -39,7 +39,7 @@ export async function requireDashboardUser() {
     }
 
     const payload = await res.json().catch(() => null);
-    const user = payload?.data as DashboardUser | undefined;
+    const user = (payload?.data?.user ?? payload?.data) as DashboardUser | undefined;
     if (!user?.id || !user?.role) {
         redirect("/login");
     }

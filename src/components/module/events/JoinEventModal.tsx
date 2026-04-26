@@ -4,8 +4,12 @@ import { useState } from "react";
 import { X, CreditCard, CheckCircle, AlertCircle, Loader2, Ticket, Shield } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { participationService } from "@/services/participationService";
+import { paymentService } from "@/services/paymentService";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Event {
@@ -43,15 +47,14 @@ function PaymentForm({
 
     try {
       // 1. Get client secret from our backend
-      const res = await fetch("/api/payments/create-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participationId, amount: event.registrationFee }),
+      const response = await paymentService.createPaymentIntent({
+        participationId,
+        amount: event.registrationFee,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Payment init failed");
-
-      const { clientSecret } = data.data;
+      if (!response.success || !response.data?.clientSecret) {
+        throw new Error(response.message || "Payment init failed");
+      }
+      const { clientSecret } = response.data;
 
       // 2. Confirm payment with Stripe
       const cardElement = elements.getElement(CardElement);
@@ -128,15 +131,9 @@ export default function JoinEventModal({ event, onClose, onSuccess }: JoinEventM
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/participations/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: event.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to join event");
-
-      const participation = data.data;
+      const response = await participationService.joinEvent({ eventId: event.id });
+      if (!response.success || !response.data) throw new Error(response.message || "Failed to join event");
+      const participation = response.data;
       setParticipationId(participation.id);
       setTicketNumber(participation.ticketNumber || "");
 
@@ -252,14 +249,20 @@ export default function JoinEventModal({ event, onClose, onSuccess }: JoinEventM
               </div>
             )}
 
-            <Elements stripe={stripePromise}>
-              <PaymentForm
-                event={event}
-                participationId={participationId}
-                onSuccess={handlePaymentSuccess}
-                onError={(msg) => setError(msg)}
-              />
-            </Elements>
+            {stripePromise ? (
+              <Elements stripe={stripePromise}>
+                <PaymentForm
+                  event={event}
+                  participationId={participationId}
+                  onSuccess={handlePaymentSuccess}
+                  onError={(msg) => setError(msg)}
+                />
+              </Elements>
+            ) : (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                Stripe key is missing. Set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in frontend `.env`.
+              </div>
+            )}
 
             <button onClick={() => setStep("confirm")} className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 transition-colors py-2">
               ← Go back

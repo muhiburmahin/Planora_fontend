@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Star, Loader2, CheckCircle } from "lucide-react";
+import { reviewService } from "@/services/reviewService";
 
 interface ReviewModalProps {
   eventId: string;
@@ -43,17 +44,10 @@ export default function ReviewModal({
     setError("");
 
     try {
-      const url = isEdit ? `/api/reviews/${existingReview!.id}` : "/api/reviews";
-      const method = isEdit ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, rating, comment }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to submit review");
+      const response = isEdit
+        ? await reviewService.updateReview(existingReview!.id, { rating, comment })
+        : await reviewService.createReview({ eventId, rating, comment });
+      if (!response.success) throw new Error(response.message || "Failed to submit review");
 
       setSuccess(true);
       setTimeout(() => {

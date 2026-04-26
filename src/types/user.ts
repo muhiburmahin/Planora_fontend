@@ -50,3 +50,20 @@ export interface UserDashboardStats {
   };
   upcomingEvents: any[];
 }
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'EVENT_INVITATION' | 'EVENT_STARTED' | 'EVENT_REMINDER' | 'REVIEW_REQUEST' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAILED' | 'PARTICIPATION_APPROVED' | 'PARTICIPATION_REJECTED' | 'OTHER';
+  title: string;
+  message: string;
+  data?: {
+    eventId?: string;
+    participationId?: string;
+    paymentId?: string;
+    [key: string]: any;
+  };
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -4,27 +4,19 @@ import { paymentService } from '@/services/paymentService';
 interface PaymentState {
   loading: boolean;
   error: string | null;
-  paymentUrl: string | null;
+  clientSecret: string | null;
 }
 
 const initialState: PaymentState = {
   loading: false,
   error: null,
-  paymentUrl: null,
+  clientSecret: null,
 };
 
 export const initPaymentAsync = createAsyncThunk(
   'payments/initPayment',
   async ({ participationId, amount }: { participationId: string; amount: number }) => {
-    const response = await paymentService.initPayment({ participationId, amount });
-    return response.data;
-  }
-);
-
-export const verifyPaymentAsync = createAsyncThunk(
-  'payments/verifyPayment',
-  async ({ tranId, pId }: { tranId: string; pId: string }) => {
-    const response = await paymentService.verifyPayment(tranId, pId);
+    const response = await paymentService.createPaymentIntent({ participationId, amount });
     return response.data;
   }
 );
@@ -37,7 +29,7 @@ const paymentSlice = createSlice({
       state.error = null;
     },
     clearPaymentUrl: (state) => {
-      state.paymentUrl = null;
+      state.clientSecret = null;
     },
   },
   extraReducers: (builder) => {
@@ -48,23 +40,11 @@ const paymentSlice = createSlice({
       })
       .addCase(initPaymentAsync.fulfilled, (state, action) => {
         state.loading = false;
-        state.paymentUrl = action.payload.successUrl;
+        state.clientSecret = action.payload?.clientSecret || null;
       })
       .addCase(initPaymentAsync.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to initialize payment';
-      })
-      .addCase(verifyPaymentAsync.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(verifyPaymentAsync.fulfilled, (state) => {
-        state.loading = false;
-        state.paymentUrl = null;
-      })
-      .addCase(verifyPaymentAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Payment verification failed';
       });
   },
 });

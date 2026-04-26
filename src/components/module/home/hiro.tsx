@@ -5,6 +5,7 @@ import FeaturedEventsSection, { FeaturedEventsSectionProps } from './FeaturedEve
 import FeaturesSection from './FeaturesSection';
 import CTAMiddleSection from './CTAMiddleSection';
 import TestimonialsSection from './TestimonialsSection';
+import { Footer } from '@/components/layout';
 
 
 interface HeroPageProps {
@@ -21,6 +22,7 @@ export default function HeroPage({ initialFeaturedEvents, initialCategories }: H
             <FeaturesSection />
             <CTAMiddleSection />
             <TestimonialsSection />
+            <Footer />
         </main>
     );
 }

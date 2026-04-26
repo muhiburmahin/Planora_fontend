@@ -118,9 +118,11 @@ export default function EventsPage() {
     searchParams.get("status") ||
     searchParams.get("type") ||
     searchParams.get("cost");
+  const featuredIds = new Set(featuredEvents.map((event) => event.id));
+  const visibleEvents = hasFilters ? events : events.filter((event) => !featuredIds.has(event.id));
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50/60 via-white to-purple-50/40">
       {/* Hero Banner */}
       {!hasFilters && (
         <div className="bg-gradient-primary text-white py-16 px-4">
@@ -206,7 +208,7 @@ export default function EventsPage() {
               </div>
             ))}
           </div>
-        ) : events.length === 0 ? (
+        ) : visibleEvents.length === 0 ? (
           <div className="py-24 text-center">
             <Frown className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-700 mb-2">No events found</h3>
@@ -223,7 +225,7 @@ export default function EventsPage() {
                   : "flex flex-col gap-4"
               }
             >
-              {events.map((event) => (
+              {visibleEvents.map((event) => (
                 <EventCard
                   key={event.id}
                   event={event}

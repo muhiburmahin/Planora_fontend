@@ -1,13 +1,13 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User } from './authStore';
-import { AdminDashboardStats, ChangeUserStatusPayload, UpdateUserPayload, UserDashboardStats } from '@/types/user';
+import { AdminDashboardStats, ChangeUserStatusPayload, Notification as UserNotification, UpdateUserPayload, UserDashboardStats } from '@/types/user';
 import { userService } from '@/services/userService';
 
 interface UserState {
   profile: User | null;
   users: User[];
   dashboardStats: AdminDashboardStats | UserDashboardStats | null;
-  notifications: Notification[];
+  notifications: UserNotification[];
   loading: boolean;
   error: string | null;
 }
@@ -167,7 +167,7 @@ const userSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(getMyNotificationsAsync.fulfilled, (state, action: PayloadAction<Notification[]>) => {
+      .addCase(getMyNotificationsAsync.fulfilled, (state, action: PayloadAction<UserNotification[]>) => {
         state.loading = false;
         state.notifications = action.payload;
       })

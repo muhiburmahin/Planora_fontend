@@ -55,8 +55,13 @@ export const RegisterForm = () => {
         }
     }
 
+    const onInvalid = () => {
+        const firstMessage = Object.values(errors)[0]?.message;
+        toast.error(firstMessage || "Please fix the highlighted registration fields.");
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4" noValidate>
             {/* Full Name */}
             <div className="space-y-1.5">
                 <Label htmlFor="name">Full Name</Label>
@@ -70,6 +75,7 @@ export const RegisterForm = () => {
                             errors.name && "border-red-500"
                         )}
                         placeholder="John Doe"
+                        disabled={loading}
                         {...register("name")}
                     />
                 </div>
@@ -90,6 +96,7 @@ export const RegisterForm = () => {
                             errors.email && "border-red-500"
                         )}
                         placeholder="email@example.com"
+                        disabled={loading}
                         {...register("email")}
                     />
                 </div>
@@ -109,6 +116,7 @@ export const RegisterForm = () => {
                             "pl-10 h-12 rounded-xl border-slate-200 transition-all focus:ring-2 focus:ring-primary-500/20",
                             errors.password && "border-red-500"
                         )}
+                        disabled={loading}
                         {...register("password")}
                     />
                     <button
@@ -138,6 +146,7 @@ export const RegisterForm = () => {
                             "pl-10 h-12 rounded-xl border-slate-200 transition-all focus:ring-2 focus:ring-primary-500/20",
                             errors.confirmPassword && "border-red-500"
                         )}
+                        disabled={loading}
                         {...register("confirmPassword")}
                     />
                     <button

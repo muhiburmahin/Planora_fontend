@@ -60,7 +60,7 @@ export const EventCard = ({ event, index = 0 }: EventCardProps) => {
                     {/* Image Wrapper */}
                     <div className="relative h-60 w-full overflow-hidden">
                         <Image
-                            src={event.images?.[0]?.url || '/placeholder.jpg'}
+                            src={event.images?.[0]?.url || '/placeholder.svg'}
                             alt={event.title}
                             fill
                             className="object-cover transition-transform duration-700 group-hover:scale-110"

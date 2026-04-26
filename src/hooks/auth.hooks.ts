@@ -6,9 +6,14 @@ export const useGetMe = () => {
     return useQuery({
         queryKey: ["user-me"],
         queryFn: async () => {
-            const res = await authClient.getMe();
-            return res.data;
+            try {
+                const res = await authClient.getMe();
+                return res.data ?? null;
+            } catch {
+                return null;
+            }
         },
+        staleTime: 60 * 1000,
     });
 };
 
@@ -18,7 +23,6 @@ export const useLoginMutation = () => {
     const mutation = useMutation({
         mutationFn: (data: any) => authClient.login(data),
         onSuccess: (response) => {
-            toast.success("Login successful!");
             queryClient.invalidateQueries({ queryKey: ["user-me"] });
         },
         onError: (error: any) => {

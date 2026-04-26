@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { reviewService, Review, ReviewResponse, ReviewStats, CreateReviewPayload, UpdateReviewPayload, ReviewOptions } from '@/services/reviewService';
+import { reviewService } from '@/services/reviewService';
+import { Review, ReviewResponse, ReviewStats, CreateReviewPayload, UpdateReviewPayload, ReviewOptions } from '@/types/review';
 
 interface ReviewState {
   reviews: Review[];
