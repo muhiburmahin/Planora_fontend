@@ -61,7 +61,7 @@ export const deleteReviewByAdminAction = async (id: string) => {
         return { success: false, message: response.error.message };
     }
 
-    revalidatePath("/admin/reviews");
+    revalidatePath("/admin-dashboard/reviews");
     return { success: true, message: "Review deleted successfully" };
 };
 
@@ -101,6 +101,17 @@ export const getReviewStatsAction = async (eventId: string) => {
 // Get My Reviews Action (for server components)
 export const getMyReviewsAction = async (options?: ReviewOptions) => {
     const response = await reviewService.server.getMyReviews(options);
+
+    if (response.error) {
+        throw new Error(response.error.message);
+    }
+
+    return response.data;
+};
+
+// Get All Reviews Action (for server components, admin only)
+export const getAllReviewsAction = async (filters: any = {}, options: any = {}) => {
+    const response = await reviewService.server.getAllReviews(filters, options);
 
     if (response.error) {
         throw new Error(response.error.message);

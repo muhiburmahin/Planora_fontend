@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { httpClient } from '@/lib/axios/httpClient';
+import { ApiResponse } from '@/types';
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/events`;
 
@@ -131,87 +132,72 @@ export const eventService = {
 
     // Client-side helpers (using Axios)
     client: {
-        list: async (params?: Record<string, any>) => {
-            try {
-                const res = await httpClient.get<any>('/events', { params });
-                return { data: res, error: null };
-            } catch (error) {
-                return { data: null, error };
-            }
+        list: async (params?: Record<string, any>): Promise<ApiResponse<any>> => {
+            return httpClient.get<any>('/events', { params });
         },
 
-        getById: async (id: string) => {
-            try {
-                const res = await httpClient.get<any>(`/events/${id}`);
-                return { data: res, error: null };
-            } catch (error) {
-                return { data: null, error };
-            }
+        getById: async (id: string): Promise<ApiResponse<any>> => {
+            return httpClient.get<any>(`/events/${id}`);
         },
 
-        getEventsByCategory: async (categorySlug: string, filters?: Record<string, any>) => {
-            try {
-                const params = { categorySlug, ...filters };
-                const res = await httpClient.get<any>('/events', { params });
-                return { data: res, error: null };
-            } catch (error) {
-                return { data: null, error };
-            }
+        getEventsByCategory: async (categorySlug: string, filters?: Record<string, any>): Promise<ApiResponse<any>> => {
+            const params = { categorySlug, ...filters };
+            return httpClient.get<any>('/events', { params });
         },
 
-        create: async (payload: any) => {
-            try {
-                const config = payload instanceof FormData 
-                    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
-                    : {};
-                const res = await httpClient.post<any>('/events/create-event', payload, config);
-                return { data: res, error: null };
-            } catch (error) {
-                return { data: null, error };
-            }
+        create: async (payload: any): Promise<ApiResponse<any>> => {
+            const config = payload instanceof FormData
+                ? { headers: { 'Content-Type': 'multipart/form-data' } }
+                : {};
+            return httpClient.post<any>('/events/create-event', payload, config);
         },
 
-        update: async (id: string, payload: any) => {
-            try {
-                const config = payload instanceof FormData 
-                    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
-                    : {};
-                const res = await httpClient.patch<any>(`/events/${id}`, payload, config);
-                return { data: res, error: null };
-            } catch (error) {
-                return { data: null, error };
-            }
+        update: async (id: string, payload: any): Promise<ApiResponse<any>> => {
+            const config = payload instanceof FormData
+                ? { headers: { 'Content-Type': 'multipart/form-data' } }
+                : {};
+            return httpClient.patch<any>(`/events/${id}`, payload, config);
         },
 
-        remove: async (id: string) => {
-            try {
-                const res = await httpClient.delete<any>(`/events/${id}`);
-                return { data: res, error: null };
-            } catch (error) {
-                return { data: null, error };
-            }
-        }
+        remove: async (id: string): Promise<ApiResponse<any>> => {
+            return httpClient.delete<any>(`/events/${id}`);
+        },
     },
     // Backward-compatible aliases
     getMyEvents: async () => {
         const response = await eventService.client.list({ myEvents: true });
-        return { data: response.data?.data ?? [], error: response.error };
+        return {
+            data: response.data?.data ?? [],
+            error: response.success ? null : { message: response.message },
+        };
     },
     getEventById: async (id: string) => {
         const response = await eventService.client.getById(id);
-        return { data: response.data?.data ?? null, error: response.error };
+        return {
+            data: response.data?.data ?? null,
+            error: response.success ? null : { message: response.message },
+        };
     },
     createEvent: async (payload: any) => {
         const response = await eventService.client.create(payload);
-        return { data: response.data?.data ?? null, error: response.error };
+        return {
+            data: response.data?.data ?? null,
+            error: response.success ? null : { message: response.message },
+        };
     },
     updateEvent: async (id: string, payload: any) => {
         const response = await eventService.client.update(id, payload);
-        return { data: response.data?.data ?? null, error: response.error };
+        return {
+            data: response.data?.data ?? null,
+            error: response.success ? null : { message: response.message },
+        };
     },
     deleteEvent: async (id: string) => {
         const response = await eventService.client.remove(id);
-        return { data: response.data?.data ?? null, error: response.error };
+        return {
+            data: response.data?.data ?? null,
+            error: response.success ? null : { message: response.message },
+        };
     },
 };
 

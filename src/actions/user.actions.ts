@@ -42,8 +42,22 @@ export const changeUserStatusAction = async (prevState: any, formData: FormData)
         return { success: false, message: response.error.message };
     }
 
-    revalidatePath("/admin/users");
+    revalidatePath("/admin-dashboard/users");
     return { success: true, message: "User status updated successfully", data: response.data };
+};
+
+export const changeUserRoleAction = async (prevState: any, formData: FormData) => {
+    const id = formData.get("id") as string;
+    const role = formData.get("role") as string;
+
+    const response = await userService.server.changeUserRole(id, { role });
+
+    if (response.error) {
+        return { success: false, message: response.error.message };
+    }
+
+    revalidatePath("/admin-dashboard/users");
+    return { success: true, message: "User role updated successfully", data: response.data };
 };
 
 // Get My Profile Action

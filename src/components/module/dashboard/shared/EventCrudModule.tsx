@@ -3,7 +3,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, SquarePen, Plus, Trash2, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Loader2,
+  SquarePen,
+  Plus,
+  Trash2,
+  Calendar,
+  MapPin,
+  LayoutGrid,
+  Globe,
+  Lock,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Filter,
+  CheckCircle2,
+  XCircle,
+  AlertCircle
+} from "lucide-react";
 import { toast } from "sonner";
 import { EventStatus, EventType } from "@/types/enums";
 import { categoryService } from "@/services/categoryService";
@@ -18,6 +36,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { TableSkeleton } from "./TableSkeleton";
 
 type EventItem = {
   id: string;
@@ -74,7 +94,10 @@ export function EventCrudModule({ title, query }: EventCrudModuleProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<EventItem | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 8;
 
   const createForm = useForm<EventCreateInput>({
     resolver: zodResolver(eventCreateSchema),
@@ -86,66 +109,65 @@ export function EventCrudModule({ title, query }: EventCrudModuleProps) {
     defaultValues: updateDefaults,
   });
 
-  const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [events]
-  );
-
   const loadCategories = async () => {
     const response = await categoryService.getAllCategories({ isActive: true }, { page: 1, limit: 200 });
-    if (!response?.success) {
-      toast.error(response?.message || "Failed to load categories");
-      return;
+    if (response?.success) {
+      const payload = response.data as any;
+      const rawData = payload?.data ?? payload ?? [];
+      // Ensure uniqueness by ID to prevent duplicate keys in UI
+      const uniqueData = Array.from(new Map(rawData.map((c: any) => [c.id, c])).values());
+      setCategories(uniqueData as any[]);
     }
-    const payload = response.data as any;
-    setCategories(payload?.data ?? payload ?? []);
   };
 
   const loadEvents = async () => {
     setLoading(true);
-    const response = await eventService.client.list({ limit: 200, sortBy: "createdAt", sortOrder: "desc", ...(query || {}) });
-    if (response.error || !response.data?.success) {
-      toast.error((response.error as any)?.message || response.data?.message || "Failed to load events");
-      setLoading(false);
-      return;
+    const response = await eventService.client.list({
+      limit,
+      page,
+      searchTerm,
+      isPublished: 'all', // Admins should see all
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      ...(query || {})
+    });
+
+    if (response.success) {
+      const payload = response.data as any;
+      setEvents((payload.data ?? []) as EventItem[]);
+      setTotalPages(payload.meta?.totalPage || 1);
     }
-    setEvents((response.data.data ?? []) as EventItem[]);
     setLoading(false);
   };
 
   useEffect(() => {
-    void Promise.all([loadCategories(), loadEvents()]);
+    loadCategories();
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadEvents();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm, page]);
+
   const onCreateSubmit = createForm.handleSubmit(async (values) => {
-    setActionError(null);
     setSubmitting(true);
     const formData = new FormData();
-    formData.append("title", values.title);
-    formData.append("description", values.description);
-    formData.append("date", values.date);
-    formData.append("time", values.time);
-    formData.append("venue", values.venue);
-    formData.append("categoryId", values.categoryId);
-    formData.append("type", values.type);
-    formData.append("registrationFee", String(values.registrationFee ?? 0));
-    formData.append("isOnline", values.isOnline ? "true" : "false");
-    if (values.maxParticipants) {
-      formData.append("maxParticipants", String(values.maxParticipants));
-    }
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined) formData.append(key, String(value));
+    });
 
     const result = await createEventAction(null, formData);
     setSubmitting(false);
     if (!result?.success) {
-      const message = result?.message || "Failed to create event";
-      setActionError(message);
-      toast.error(message);
+      toast.error(result?.message || "Failed to create event");
       return;
     }
-    toast.success(result.message || "Event created");
+    toast.success("Event launched successfully!");
     createForm.reset(createDefaults);
     setCreateOpen(false);
-    await loadEvents();
+    loadEvents();
   });
 
   const openEdit = (event: EventItem) => {
@@ -163,249 +185,360 @@ export function EventCrudModule({ title, query }: EventCrudModuleProps) {
 
   const onEditSubmit = editForm.handleSubmit(async (values) => {
     if (!editing) return;
-    setActionError(null);
     setSubmitting(true);
     const formData = new FormData();
     formData.append("id", editing.id);
-    formData.append("title", values.title);
-    formData.append("description", values.description);
-    formData.append("date", values.date);
-    formData.append("registrationFee", String(values.registrationFee ?? 0));
-    formData.append("status", values.status);
-    formData.append("isPublished", values.isPublished ? "true" : "false");
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined) formData.append(key, String(value));
+    });
+
     const result = await updateEventAction(null, formData);
     setSubmitting(false);
     if (!result?.success) {
-      const message = result?.message || "Failed to update event";
-      setActionError(message);
-      toast.error(message);
+      toast.error(result?.message || "Failed to update");
       return;
     }
-    toast.success(result.message || "Event updated");
+    toast.success("Event refined successfully");
     setEditOpen(false);
     setEditing(null);
-    await loadEvents();
+    loadEvents();
   });
 
   const onDelete = async (id: string) => {
-    setActionError(null);
+    if (!confirm("Are you sure? This action cannot be undone if active participants exist.")) return;
     const result = await deleteEventAction(id);
-    if (!result?.success) {
-      const message = result?.message || "Failed to delete event";
-      setActionError(message);
-      toast.error(message);
-      return;
+    if (result?.success) {
+      toast.success("Event removed from active list");
+      loadEvents();
+    } else {
+      toast.error(result?.message || "Failed to delete");
     }
-    toast.success(result.message || "Event deleted");
-    await loadEvents();
   };
 
   return (
-    <Card className="border-primary-200/80 bg-gradient-to-br from-white via-primary-50/30 to-secondary-50/40 shadow-lg shadow-primary-200/20 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <CardTitle className="text-slate-900 dark:text-slate-100">{title}</CardTitle>
-          <p className="mt-1 text-xs font-medium text-primary-700 dark:text-primary-300">Create, update and manage event records from one place</p>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{title}</h1>
+          <p className="text-sm font-medium text-slate-500">Intelligent ecosystem for event orchestration.</p>
         </div>
+
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full bg-gradient-primary text-white shadow-md sm:w-auto">
-              <Plus className="mr-1 h-4 w-4" />
-              Create Event
+            <Button className="rounded-2xl bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-6 font-black text-white shadow-xl shadow-primary-500/20 transition-all hover:scale-105 hover:shadow-primary-500/40 active:scale-95">
+              <Plus className="mr-2 h-5 w-5" />
+              Launch New Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90svh] overflow-y-auto border-primary-200 bg-gradient-to-br from-white to-primary-50 sm:max-w-2xl dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
-            <DialogHeader>
-              <DialogTitle>Create Event</DialogTitle>
-              <DialogDescription>Add a new event to the platform.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={onCreateSubmit} className="grid gap-4 md:grid-cols-2">
+          <DialogContent className="max-h-[95svh] overflow-y-auto border-0 bg-white p-0 shadow-2xl sm:max-w-2xl dark:bg-slate-900">
+            <div className="bg-gradient-to-r from-primary-900 to-primary-700 px-8 py-8 text-white">
+              <DialogTitle className="text-3xl font-black tracking-tight">Create New Event</DialogTitle>
+              <DialogDescription className="text-primary-100/80 font-medium">Configure the core parameters of your upcoming experience.</DialogDescription>
+            </div>
+            <form onSubmit={onCreateSubmit} className="grid gap-6 p-8 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
-                <Label>Title</Label>
-                <Input {...createForm.register("title")} />
-                {createForm.formState.errors.title && <p className="text-xs text-red-500">{createForm.formState.errors.title.message}</p>}
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Event Title</Label>
+                <Input {...createForm.register("title")} className="h-12 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white dark:bg-slate-800" placeholder="e.g. Annual Tech Summit" />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Description</Label>
-                <Textarea rows={4} {...createForm.register("description")} />
-                {createForm.formState.errors.description && <p className="text-xs text-red-500">{createForm.formState.errors.description.message}</p>}
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Description</Label>
+                <Textarea rows={4} {...createForm.register("description")} className="rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white dark:bg-slate-800" placeholder="What is this event about?..." />
               </div>
               <div className="space-y-2">
-                <Label>Date</Label>
-                <Input type="date" {...createForm.register("date")} />
-                {createForm.formState.errors.date && <p className="text-xs text-red-500">{createForm.formState.errors.date.message}</p>}
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input type="date" {...createForm.register("date")} className="h-11 pl-10 rounded-xl border-slate-200" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label>Time</Label>
-                <Input type="time" {...createForm.register("time")} />
-                {createForm.formState.errors.time && <p className="text-xs text-red-500">{createForm.formState.errors.time.message}</p>}
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Time</Label>
+                <Input type="time" {...createForm.register("time")} className="h-11 rounded-xl border-slate-200" />
               </div>
               <div className="space-y-2">
-                <Label>Venue</Label>
-                <Input {...createForm.register("venue")} />
-                {createForm.formState.errors.venue && <p className="text-xs text-red-500">{createForm.formState.errors.venue.message}</p>}
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Venue / Location</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input {...createForm.register("venue")} className="h-11 pl-10 rounded-xl border-slate-200" placeholder="Physical Address or Virtual Link" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={createForm.watch("categoryId")} onValueChange={(v) => createForm.setValue("categoryId", v, { shouldValidate: true })}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Category</Label>
+                <Select value={createForm.watch("categoryId")} onValueChange={(v) => createForm.setValue("categoryId", v)}>
+                  <SelectTrigger className="h-11 w-full rounded-xl border-slate-200 bg-white">
+                    <SelectValue placeholder="Select classification" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
+                  <SelectContent className="rounded-2xl border-0 shadow-2xl">
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="rounded-lg py-3 font-bold">{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {createForm.formState.errors.categoryId && <p className="text-xs text-red-500">{createForm.formState.errors.categoryId.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Access Type</Label>
                 <Select value={createForm.watch("type")} onValueChange={(v) => createForm.setValue("type", v as EventType)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select type" />
+                  <SelectTrigger className="h-11 w-full rounded-xl border-slate-200">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={EventType.PUBLIC}>Public</SelectItem>
-                    <SelectItem value={EventType.PRIVATE}>Private</SelectItem>
+                  <SelectContent className="rounded-2xl border-0 shadow-2xl">
+                    <SelectItem value={EventType.PUBLIC} className="rounded-lg py-3 font-bold">Public (Open Admission)</SelectItem>
+                    <SelectItem value={EventType.PRIVATE} className="rounded-lg py-3 font-bold">Private (Restricted Access)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Registration Fee</Label>
-                <Input type="number" min={0} step="0.01" {...createForm.register("registrationFee")} />
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Admission Fee (৳)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">৳</span>
+                  <Input type="number" {...createForm.register("registrationFee")} className="h-11 pl-8 rounded-xl border-slate-200" />
+                </div>
               </div>
-              <DialogFooter className="md:col-span-2">
-                <Button type="submit" disabled={submitting} className="w-full bg-gradient-primary text-white sm:w-auto">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Event"}
+              <div className="md:col-span-2 pt-4">
+                <Button type="submit" disabled={submitting} className="h-14 w-full rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 text-lg font-black text-white shadow-xl shadow-primary-500/20">
+                  {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Deploy Experience"}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {actionError && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
-            <AlertCircle className="h-4 w-4" />
-            <span>{actionError}</span>
+      </div>
+
+      {/* Filters and Search */}
+      <Card className="border-0 bg-white/60 shadow-sm backdrop-blur-md dark:bg-slate-900/40">
+        <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search events by title or venue..."
+              className="h-11 pl-10 rounded-xl border-slate-200 focus:ring-primary-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        )}
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading events...
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50/50 to-secondary-50/60 dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
+          <Button variant="outline" className="h-11 gap-2 rounded-xl border-slate-200 px-6 font-bold">
+            <Filter className="h-4 w-4" />
+            Refine Search
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Table Section */}
+      <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
+        <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
-              <TableRow className="bg-white/80 dark:bg-slate-900/80">
-                <TableHead className="font-bold text-primary-800">Title</TableHead>
-                <TableHead className="font-bold text-primary-800">Date</TableHead>
-                <TableHead className="font-bold text-primary-800">Category</TableHead>
-                <TableHead className="font-bold text-primary-800">Status</TableHead>
-                <TableHead className="font-bold text-primary-800">Fee</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+            <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+              <TableRow>
+                <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Identity</TableHead>
+                <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Logistics</TableHead>
+                <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Lifecycle</TableHead>
+                <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Financials</TableHead>
+                <TableHead className="px-8 py-5 text-right font-black uppercase tracking-widest text-slate-400">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedEvents.map((event) => (
-                <TableRow key={event.id} className="bg-white/70 dark:bg-slate-900/60">
-                  <TableCell className="max-w-xs truncate font-medium">{event.title}</TableCell>
-                  <TableCell>{new Date(event.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{event.category?.name || "N/A"}</TableCell>
-                  <TableCell>
-                    <span className="rounded-full bg-primary-100 px-2 py-1 text-xs font-semibold text-primary-700">{event.status}</span>
-                  </TableCell>
-                  <TableCell>${event.registrationFee ?? 0}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" className="border-primary-200 text-primary-700 hover:bg-primary-50" onClick={() => openEdit(event)}>
-                        <SquarePen className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button size="sm" variant="destructive" className="bg-red-500 hover:bg-red-600" onClick={() => void onDelete(event.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {sortedEvents.length === 0 && (
+              <AnimatePresence mode="popLayout">
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-20">
+                      <TableSkeleton columns={5} rows={5} />
+                    </TableCell>
+                  </TableRow>
+                ) : events.map((event, index) => (
+                  <motion.tr
+                    key={event.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                  >
+                    <TableCell className="px-8 py-5">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-100/50 text-primary-700 shadow-inner group-hover:scale-110 transition-transform">
+                          <Calendar className="h-6 w-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-black text-slate-900 dark:text-white">{event.title}</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <Badge variant="outline" className="rounded-md border-primary-100 bg-primary-50/30 text-[10px] font-black text-primary-700">
+                              {event.category?.name || "Global"}
+                            </Badge>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {event.id.slice(0, 8)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-8 py-5">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+                          <MapPin className="h-3.5 w-3.5 text-secondary-500" />
+                          <span className="truncate max-w-[150px]">{event.venue}</span>
+                        </div>
+                        <p className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                          {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          <span className="h-1 w-1 rounded-full bg-slate-200"></span>
+                          {event.time}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-8 py-5">
+                      <div className="space-y-2">
+                        <Badge className={`rounded-lg border-0 px-3 py-1 text-[10px] font-black uppercase tracking-widest ${event.isPublished ? "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200" : "bg-slate-50 text-slate-400 ring-1 ring-slate-200"
+                          }`}>
+                          {event.isPublished ? "Live Feed" : "Internal Draft"}
+                        </Badge>
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase">
+                          {event.type === EventType.PUBLIC ? <Globe className="h-3.5 w-3.5 text-blue-500" /> : <Lock className="h-3.5 w-3.5 text-amber-500" />}
+                          {event.type}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-8 py-5">
+                      <div className="text-lg font-black text-slate-900 dark:text-white">
+                        <span className="mr-0.5 text-xs text-slate-400 font-bold">৳</span>
+                        {event.registrationFee.toLocaleString()}
+                      </div>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${event.status === EventStatus.COMPLETED ? "text-blue-500" :
+                          event.status === EventStatus.CANCELLED ? "text-red-500" :
+                            "text-primary-500"
+                        }`}>
+                        {event.status}
+                      </p>
+                    </TableCell>
+                    <TableCell className="px-8 py-5 text-right">
+                      <div className="flex justify-end gap-3">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 rounded-xl border-slate-100 hover:bg-primary-50 hover:text-primary-600 transition-all hover:scale-110 active:scale-95"
+                          onClick={() => openEdit(event)}
+                        >
+                          <SquarePen className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 rounded-xl border-slate-100 hover:bg-red-50 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
+                          onClick={() => onDelete(event.id)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+              {!loading && events.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500">
-                    No events found.
+                  <TableCell colSpan={5} className="h-96 text-center">
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <div className="rounded-full bg-slate-50 p-6">
+                        <AlertCircle className="h-12 w-12 text-slate-300" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-lg font-black text-slate-600 tracking-tight">No Events Detected</p>
+                        <p className="text-sm font-medium text-slate-400">Adjust your filters or initiate a new launch.</p>
+                      </div>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-          </div>
-        )}
-      </CardContent>
+        </div>
 
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between border-t border-slate-50 bg-slate-50/30 px-8 py-6 dark:bg-slate-900/50">
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Page <span className="text-slate-900 dark:text-white">{page}</span> of {totalPages}
+          </p>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 rounded-xl border-slate-100 font-bold px-4 disabled:opacity-30"
+              disabled={page <= 1 || loading}
+              onClick={() => setPage(p => p - 1)}
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 rounded-xl border-slate-100 font-bold px-4 disabled:opacity-30"
+              disabled={page >= totalPages || loading}
+              onClick={() => setPage(p => p + 1)}
+            >
+              Next
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[90svh] overflow-y-auto border-primary-200 bg-gradient-to-br from-white to-primary-50 sm:max-w-xl dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
-          <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
-            <DialogDescription>Update your event information.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={onEditSubmit} className="grid gap-4 md:grid-cols-2">
+        <DialogContent className="max-h-[95svh] overflow-y-auto border-0 bg-white p-0 shadow-2xl sm:max-w-2xl dark:bg-slate-900">
+          <div className="bg-gradient-to-r from-secondary-900 to-secondary-700 px-8 py-8 text-white">
+            <DialogTitle className="text-3xl font-black tracking-tight">Refine Experience</DialogTitle>
+            <DialogDescription className="text-secondary-100/80 font-medium">Calibrate the status and metadata of your active event.</DialogDescription>
+          </div>
+          <form onSubmit={onEditSubmit} className="grid gap-6 p-8 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
-              <Label>Title</Label>
-              <Input {...editForm.register("title")} />
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Title</Label>
+              <Input {...editForm.register("title")} className="h-12 rounded-xl border-slate-200" />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label>Description</Label>
-              <Textarea rows={4} {...editForm.register("description")} />
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Description</Label>
+              <Textarea rows={4} {...editForm.register("description")} className="rounded-xl border-slate-200" />
             </div>
             <div className="space-y-2">
-              <Label>Date</Label>
-              <Input type="date" {...editForm.register("date")} />
-            </div>
-            <div className="space-y-2">
-              <Label>Registration Fee</Label>
-              <Input type="number" min={0} step="0.01" {...editForm.register("registrationFee")} />
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Operational Status</Label>
               <Select value={editForm.watch("status")} onValueChange={(v) => editForm.setValue("status", v as EventStatus)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-11 w-full rounded-xl border-slate-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EventStatus.UPCOMING}>Upcoming</SelectItem>
-                  <SelectItem value={EventStatus.ONGOING}>Ongoing</SelectItem>
-                  <SelectItem value={EventStatus.COMPLETED}>Completed</SelectItem>
-                  <SelectItem value={EventStatus.CANCELLED}>Cancelled</SelectItem>
+                <SelectContent className="rounded-2xl border-0 shadow-2xl">
+                  <SelectItem value={EventStatus.UPCOMING} className="rounded-lg py-2 font-bold">Upcoming</SelectItem>
+                  <SelectItem value={EventStatus.ONGOING} className="rounded-lg py-2 font-bold">Ongoing</SelectItem>
+                  <SelectItem value={EventStatus.COMPLETED} className="rounded-lg py-2 font-bold">Completed</SelectItem>
+                  <SelectItem value={EventStatus.CANCELLED} className="rounded-lg py-2 font-bold">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Publication</Label>
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Lifecycle State</Label>
               <Select
                 value={editForm.watch("isPublished") ? "PUBLISHED" : "DRAFT"}
                 onValueChange={(v) => editForm.setValue("isPublished", v === "PUBLISHED")}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-11 w-full rounded-xl border-slate-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PUBLISHED">Published</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectContent className="rounded-2xl border-0 shadow-2xl">
+                  <SelectItem value="PUBLISHED" className="rounded-lg py-2 font-bold text-emerald-600">Published / Live</SelectItem>
+                  <SelectItem value="DRAFT" className="rounded-lg py-2 font-bold text-slate-400">Internal Draft</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter className="md:col-span-2">
-              <Button type="submit" disabled={submitting} className="w-full bg-gradient-primary text-white sm:w-auto">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Revised Fee (৳)</Label>
+              <Input type="number" {...editForm.register("registrationFee")} className="h-11 rounded-xl border-slate-200" />
+            </div>
+            <div className="md:col-span-2 pt-4">
+              <Button type="submit" disabled={submitting} className="h-14 w-full rounded-2xl bg-gradient-to-r from-secondary-600 to-secondary-800 text-lg font-black text-white">
+                {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Commit Modifications"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
-    </Card>
+    </motion.div>
   );
 }

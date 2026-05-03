@@ -9,7 +9,7 @@ const getReadableMessage = (error: any) => {
     if (first?.path && first?.message) return `${first.path}: ${first.message}`;
     if (first?.message) return first.message;
   }
-  return error?.message || 'Request failed';
+   return error?.message || 'Request failed';
 };
 
 export const createEventAction = async (prevState: any, formData: FormData) => {

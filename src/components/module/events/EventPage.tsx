@@ -60,17 +60,30 @@ export default function EventsPage() {
         page: currentPage,
         limit: 12,
       };
+      
+      // Add filter parameters from URL
       searchParams.forEach((value, key) => {
-        query[key] = value;
+        if (value) {
+          query[key] = value;
+        }
       });
 
       const response = await eventService.client.list(query);
-      if (!response.error && response.data) {
-        setEvents(response.data?.data ?? []);
-        setMeta(response.data?.meta ?? null);
+      if (!response.success) {
+        console.error("Failed to fetch events:", response.message);
+        setEvents([]);
+        setMeta(null);
+      } else if (response.data && response.data.data) {
+        setEvents(response.data.data);
+        setMeta(response.data.meta ?? null);
+      } else {
+        setEvents([]);
+        setMeta(null);
       }
     } catch (err) {
       console.error("Failed to fetch events:", err);
+      setEvents([]);
+      setMeta(null);
     } finally {
       setLoading(false);
     }
@@ -79,11 +92,15 @@ export default function EventsPage() {
   const fetchFeatured = useCallback(async () => {
     try {
       const response = await eventService.client.list({ isFeatured: true, limit: 4, status: "UPCOMING" });
-      if (!response.error && response.data) {
-        setFeaturedEvents(response.data?.data ?? []);
+      if (!response.success) {
+        console.error("Failed to fetch featured events:", response.message);
+        setFeaturedEvents([]);
+      } else if (response.data && response.data.data) {
+        setFeaturedEvents(response.data.data);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch featured events:", err);
+      setFeaturedEvents([]);
     }
   }, []);
 

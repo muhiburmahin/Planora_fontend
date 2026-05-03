@@ -21,6 +21,24 @@ async function mapFetchResponse(res: Response) {
 export const userService = {
     // Server-side helpers (use in server components / actions)
     server: {
+        getSession: async () => {
+            try {
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const res = await fetch(`${API_URL}/me`, {
+                    method: "GET",
+                    headers: {
+                        Cookie: cookieStore.toString(),
+                        Accept: "application/json",
+                    },
+                    cache: "no-store",
+                });
+                return await mapFetchResponse(res);
+            } catch (error) {
+                return { data: null, error: { message: 'Failed to fetch session', error } };
+            }
+        },
+
         getMyProfile: async () => {
             try {
                 const { cookies } = await import("next/headers");
@@ -77,11 +95,12 @@ export const userService = {
             }
         },
 
-        getAllUsers: async () => {
+        getAllUsers: async (filters: any = {}, options: any = {}) => {
             try {
                 const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
-                const res = await fetch(`${API_URL}`, {
+                const query = new URLSearchParams({ ...filters, ...options }).toString();
+                const res = await fetch(`${API_URL}?${query}`, {
                     method: "GET",
                     headers: {
                         Cookie: cookieStore.toString(),
@@ -112,6 +131,26 @@ export const userService = {
                 return await mapFetchResponse(res);
             } catch (error) {
                 return { data: null, error: { message: 'Failed to change user status', error } };
+            }
+        },
+
+        changeUserRole: async (id: string, payload: { role: string }) => {
+            try {
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const res = await fetch(`${API_URL}/${id}/role`, {
+                    method: "PATCH",
+                    headers: {
+                        Cookie: cookieStore.toString(),
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                    cache: "no-store",
+                });
+                return await mapFetchResponse(res);
+            } catch (error) {
+                return { data: null, error: { message: 'Failed to change user role', error } };
             }
         },
 
@@ -165,8 +204,9 @@ export const userService = {
         return httpClient.get<AdminDashboardStats | UserDashboardStats>('/users/dashboard-summary');
     },
 
-    getAllUsers: async (): Promise<ApiResponse<User[]>> => {
-        return httpClient.get<User[]>('/users');
+    getAllUsers: async (filters: any = {}, options: any = {}): Promise<ApiResponse<User[]>> => {
+        const query = new URLSearchParams({ ...filters, ...options }).toString();
+        return httpClient.get<User[]>(`/users?${query}`);
     },
 
     changeUserStatus: async (
@@ -189,6 +229,10 @@ export const userService = {
     },
 
     getAdminDashboardStats: async (): Promise<ApiResponse<AdminDashboardStats>> => {
-        return httpClient.get<AdminDashboardStats>('/users/admin/dashboard-summary');
+        return httpClient.get<AdminDashboardStats>('/users/dashboard-summary');
     },
-};
+
+    changeUserRole: async (id: string, role: string): Promise<ApiResponse<any>> => {
+        return httpClient.patch<any>(`/users/${id}/role`, { role });
+    },
+};

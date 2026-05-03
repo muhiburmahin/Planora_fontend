@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { GeistSans, GeistMono } from 'geist/font';
 import { ThemeProvider } from '@/providers/themeProvider';
 import './globals.css';
-import { Navbar } from '@/components/layout/Navbar';
 import { Toaster } from 'sonner';
 import QueryProvider from '@/providers/query-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';

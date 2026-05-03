@@ -3,8 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, SquarePen, ShieldCheck, ShieldX, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  SquarePen,
+  ShieldCheck,
+  ShieldX,
+  AlertCircle,
+  Tags,
+  Hash,
+  Activity,
+  Search,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { categoryService } from "@/services/categoryService";
 import { createCategoryAction, deleteCategoryAction, toggleCategoryStatusAction, updateCategoryAction } from "@/actions/category.actions";
 import { categoryFormSchema, CategoryFormInput } from "@/lib/validations/dashboard";
@@ -15,6 +30,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { TableSkeleton } from "../shared/TableSkeleton";
 
 type CategoryItem = {
   id: string;
@@ -37,7 +54,10 @@ export function AdminCategoriesModule() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryItem | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 8;
 
   const createForm = useForm<CategoryFormInput>({
     resolver: zodResolver(categoryFormSchema),
@@ -49,30 +69,25 @@ export function AdminCategoriesModule() {
     defaultValues,
   });
 
-  const sortedItems = useMemo(
-    () => [...items].sort((a, b) => a.name.localeCompare(b.name)),
-    [items]
-  );
-
   const loadCategories = async () => {
     setLoading(true);
-    const response = await categoryService.getAllCategories({}, { limit: 200, page: 1 });
-    if (!response?.success) {
-      toast.error(response?.message || "Failed to load categories");
-      setLoading(false);
-      return;
+    const response = await categoryService.getAllCategories({ searchTerm }, { limit, page });
+    if (response?.success) {
+      const payload = response.data as any;
+      setItems(payload?.data ?? payload ?? []);
+      setTotalPages(payload?.meta?.totalPages || 1);
     }
-    const payload = response.data as any;
-    setItems(payload?.data ?? payload ?? []);
     setLoading(false);
   };
 
   useEffect(() => {
-    void loadCategories();
-  }, []);
+    const timer = setTimeout(() => {
+      loadCategories();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm, page]);
 
   const onCreateSubmit = createForm.handleSubmit(async (data) => {
-    setActionError(null);
     setSubmitting(true);
     const formData = new FormData();
     formData.append("name", data.name);
@@ -80,15 +95,13 @@ export function AdminCategoriesModule() {
     const result = await createCategoryAction(null, formData);
     setSubmitting(false);
     if (!result?.success) {
-      const message = result?.message || "Failed to create category";
-      setActionError(message);
-      toast.error(message);
+      toast.error(result?.message || "Failed to create");
       return;
     }
-    toast.success(result.message || "Category created");
+    toast.success("Category defined successfully");
     createForm.reset(defaultValues);
     setCreateOpen(false);
-    await loadCategories();
+    loadCategories();
   });
 
   const openEdit = (item: CategoryItem) => {
@@ -102,7 +115,6 @@ export function AdminCategoriesModule() {
 
   const onEditSubmit = editForm.handleSubmit(async (data) => {
     if (!editing) return;
-    setActionError(null);
     setSubmitting(true);
     const formData = new FormData();
     formData.append("id", editing.id);
@@ -111,182 +123,222 @@ export function AdminCategoriesModule() {
     const result = await updateCategoryAction(null, formData);
     setSubmitting(false);
     if (!result?.success) {
-      const message = result?.message || "Failed to update category";
-      setActionError(message);
-      toast.error(message);
+      toast.error(result?.message || "Failed to update");
       return;
     }
-    toast.success(result.message || "Category updated");
+    toast.success("Category refined successfully");
     setEditOpen(false);
     setEditing(null);
-    await loadCategories();
+    loadCategories();
   });
 
   const onToggleStatus = async (id: string) => {
-    setActionError(null);
     const formData = new FormData();
     formData.append("id", id);
     const result = await toggleCategoryStatusAction(null, formData);
-    if (!result?.success) {
-      const message = result?.message || "Failed to change category status";
-      setActionError(message);
-      toast.error(message);
-      return;
+    if (result?.success) {
+      toast.success("Status updated");
+      loadCategories();
+    } else {
+      toast.error(result?.message || "Failed to update status");
     }
-    toast.success(result.message || "Category status updated");
-    await loadCategories();
   };
 
   const onDelete = async (id: string) => {
-    setActionError(null);
+    if (!confirm("Are you sure? This classification will be archived.")) return;
     const formData = new FormData();
     formData.append("id", id);
     const result = await deleteCategoryAction(null, formData);
-    if (!result?.success) {
-      const message = result?.message || "Failed to delete category";
-      setActionError(message);
-      toast.error(message);
-      return;
+    if (result?.success) {
+      toast.success("Category removed from active taxonomy");
+      loadCategories();
+    } else {
+      toast.error(result?.message || "Failed to delete");
     }
-    toast.success(result.message || "Category deleted");
-    await loadCategories();
   };
 
   return (
-    <Card className="border-primary-200/80 bg-white/95 shadow-lg shadow-primary-200/20">
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <CardTitle className="text-slate-900">Category Management</CardTitle>
-          <p className="mt-1 text-xs font-medium text-primary-700">Create, update, activate, and remove categories</p>
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="space-y-6"
+    >
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Taxonomy Manager</h1>
+          <p className="text-sm font-medium text-slate-500">Curate and organize the event classifications.</p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full bg-gradient-primary text-white sm:w-auto">
-              <Plus className="mr-1 h-4 w-4" />
-              Create Category
+            <Button className="rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 px-6 py-6 font-black text-white shadow-xl shadow-primary-500/20 transition-all hover:scale-105 active:scale-95">
+              <Plus className="mr-2 h-5 w-5" />
+              New Classification
             </Button>
           </DialogTrigger>
-          <DialogContent className="border-primary-200 bg-white sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create Category</DialogTitle>
-              <DialogDescription>Add a new category for event organization.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={onCreateSubmit} className="space-y-4">
+          <DialogContent className="rounded-3xl border-0 bg-white p-0 shadow-2xl dark:bg-slate-900">
+            <div className="bg-gradient-to-r from-primary-900 to-primary-700 px-8 py-8 text-white">
+              <DialogTitle className="text-3xl font-black">Define Category</DialogTitle>
+              <DialogDescription className="text-primary-100/80 font-medium tracking-tight">Add a new dimension to event organization.</DialogDescription>
+            </div>
+            <form onSubmit={onCreateSubmit} className="space-y-6 p-8">
               <div className="space-y-2">
-                <Label htmlFor="create-name">Name</Label>
-                <Input id="create-name" {...createForm.register("name")} />
-                {createForm.formState.errors.name && (
-                  <p className="text-xs font-medium text-red-500">{createForm.formState.errors.name.message}</p>
-                )}
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Label Name</Label>
+                <Input {...createForm.register("name")} className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white" placeholder="e.g. Masterclass" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="create-description">Description</Label>
-                <Textarea id="create-description" rows={4} {...createForm.register("description")} />
-                {createForm.formState.errors.description && (
-                  <p className="text-xs font-medium text-red-500">{createForm.formState.errors.description.message}</p>
-                )}
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Contextual Description</Label>
+                <Textarea {...createForm.register("description")} className="rounded-xl border-slate-200 bg-slate-50 focus:bg-white" rows={4} placeholder="What kind of events fall under this?..." />
               </div>
-              <DialogFooter>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
-                </Button>
-              </DialogFooter>
+              <Button type="submit" disabled={submitting} className="h-14 w-full rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 text-lg font-black text-white shadow-xl shadow-primary-500/20">
+                {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Authorize Category"}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {actionError && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
-            <AlertCircle className="h-4 w-4" />
-            <span>{actionError}</span>
-          </div>
-        )}
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading categories...
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50/50 to-secondary-50/60">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-white/80">
-                <TableHead className="font-bold text-primary-800">Name</TableHead>
-                <TableHead className="font-bold text-primary-800">Description</TableHead>
-                <TableHead className="font-bold text-primary-800">Events</TableHead>
-                <TableHead className="font-bold text-primary-800">Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedItems.map((item) => (
-                <TableRow key={item.id} className="bg-white/70">
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell className="max-w-xs truncate">{item.description || "N/A"}</TableCell>
-                  <TableCell>{item._count?.events ?? 0}</TableCell>
-                  <TableCell>
-                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}>
-                      {item.isActive ? "Active" : "Inactive"}
-                    </span>
+      </div>
+
+      <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input 
+              placeholder="Search taxonomy..." 
+              className="h-12 pl-10 rounded-2xl border-slate-200 shadow-sm focus:ring-primary-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+          />
+      </div>
+
+      <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
+        <div className="overflow-x-auto">
+          {loading ? (
+             <TableSkeleton columns={5} rows={8} />
+          ) : (
+            <Table>
+              <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                <TableRow>
+                  <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Identity</TableHead>
+                  <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Metadata</TableHead>
+                  <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Metric</TableHead>
+                  <TableHead className="px-8 py-5 font-black uppercase tracking-widest text-slate-400">Status</TableHead>
+                  <TableHead className="px-8 py-5 text-right font-black uppercase tracking-widest text-slate-400">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <AnimatePresence mode="popLayout">
+                {items.map((item, index) => (
+                <motion.tr 
+                  key={item.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                >
+                  <TableCell className="px-8 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100/50 text-primary-700 shadow-inner group-hover:scale-110 transition-transform">
+                        <Tags className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-base font-black text-slate-900 dark:text-white">{item.name}</p>
+                        <p className="text-[10px] font-medium text-slate-400 line-clamp-1 max-w-[250px]">{item.description || "N/A"}</p>
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" className="border-primary-200 text-primary-700 hover:bg-primary-50" onClick={() => openEdit(item)}>
-                        <SquarePen className="h-3.5 w-3.5" />
+                  <TableCell className="px-8 py-5">
+                    <div className="flex items-center gap-1 text-xs font-black text-slate-500 uppercase tracking-tighter">
+                      <Hash className="h-3.5 w-3.5 text-slate-300" />
+                      {item.slug}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-8 py-5">
+                    <div className="flex items-center gap-2 font-black text-slate-900 dark:text-white">
+                      <Activity className="h-4 w-4 text-primary-500" />
+                      {item._count?.events ?? 0} <span className="text-[10px] text-slate-400">NODES</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-8 py-5">
+                    <Badge className={`rounded-lg border-0 px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                        item.isActive ? "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200" : "bg-slate-50 text-slate-400 ring-1 ring-slate-200"
+                    }`}>
+                      {item.isActive ? "Operational" : "Standby"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-8 py-5 text-right">
+                    <div className="flex justify-end gap-3">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-10 w-10 rounded-xl border-slate-100 hover:bg-primary-50 hover:text-primary-600 transition-all hover:scale-110" 
+                        onClick={() => openEdit(item)}
+                      >
+                        <SquarePen className="h-5 w-5" />
                       </Button>
-                      <Button size="sm" variant="outline" className="border-secondary-200 text-secondary-700 hover:bg-secondary-50" onClick={() => void onToggleStatus(item.id)}>
-                        {item.isActive ? <ShieldX className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-                      </Button>
-                      <Button size="sm" variant="destructive" className="bg-red-500 hover:bg-red-600" onClick={() => void onDelete(item.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-10 w-10 rounded-xl border-slate-100 hover:bg-red-50 hover:text-red-600 transition-all hover:scale-110" 
+                        onClick={() => onDelete(item.id)}
+                      >
+                        <Trash2 className="h-5 w-5" />
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               ))}
-              {sortedItems.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-slate-500">
-                    No categories found.
-                  </TableCell>
-                </TableRow>
-              )}
+              </AnimatePresence>
             </TableBody>
-          </Table>
-          </div>
-        )}
-      </CardContent>
+            </Table>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between border-t border-slate-50 bg-slate-50/20 px-8 py-6">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400">
+                Segment <span className="text-slate-900">{page}</span> / {totalPages}
+            </span>
+            <div className="flex gap-2">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={page <= 1 || loading}
+                    className="h-10 rounded-xl border-slate-100 font-bold px-4"
+                    onClick={() => setPage(p => p - 1)}
+                >
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Prev
+                </Button>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={page >= totalPages || loading}
+                    className="h-10 rounded-xl border-slate-100 font-bold px-4"
+                    onClick={() => setPage(p => p + 1)}
+                >
+                    Next <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+            </div>
+        </div>
+      </Card>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="border-primary-200 bg-white sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>Update category details.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={onEditSubmit} className="space-y-4">
+        <DialogContent className="rounded-3xl border-0 bg-white p-0 shadow-2xl dark:bg-slate-900">
+          <div className="bg-gradient-to-r from-secondary-900 to-secondary-700 px-8 py-8 text-white">
+            <DialogTitle className="text-3xl font-black">Refine Category</DialogTitle>
+            <DialogDescription className="text-secondary-100/80 font-medium">Calibrate classification parameters.</DialogDescription>
+          </div>
+          <form onSubmit={onEditSubmit} className="space-y-6 p-8">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Name</Label>
-              <Input id="edit-name" {...editForm.register("name")} />
-              {editForm.formState.errors.name && (
-                <p className="text-xs font-medium text-red-500">{editForm.formState.errors.name.message}</p>
-              )}
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Label</Label>
+              <Input {...editForm.register("name")} className="h-12 rounded-xl border-slate-200" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea id="edit-description" rows={4} {...editForm.register("description")} />
-              {editForm.formState.errors.description && (
-                <p className="text-xs font-medium text-red-500">{editForm.formState.errors.description.message}</p>
-              )}
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Operational Logic</Label>
+              <Textarea {...editForm.register("description")} className="rounded-xl border-slate-200" rows={4} />
             </div>
-            <DialogFooter>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
-              </Button>
-            </DialogFooter>
+            <Button type="submit" disabled={submitting} className="h-14 w-full rounded-2xl bg-gradient-to-r from-secondary-600 to-secondary-800 text-lg font-black text-white shadow-xl shadow-secondary-500/20">
+              {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Commit Changes"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
-    </Card>
+    </motion.div>
   );
 }

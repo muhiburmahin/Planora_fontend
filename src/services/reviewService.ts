@@ -1,4 +1,4 @@
-﻿import { httpClient } from '@/lib/axios/httpClient';
+import { httpClient } from '@/lib/axios/httpClient';
 import { ApiResponse } from '@/types/api.types';
 import { Review, CreateReviewPayload, UpdateReviewPayload, ReviewOptions, ReviewResponse, ReviewStats } from '@/types/review';
 
@@ -169,6 +169,25 @@ export const reviewService = {
                 return { data: null, error: { message: 'Failed to delete review by admin', error } };
             }
         },
+
+        getAllReviews: async (filters: any = {}, options: any = {}) => {
+            try {
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const query = new URLSearchParams({ ...filters, ...options }).toString();
+                const res = await fetch(`${API_URL}/admin/all?${query}`, {
+                    method: "GET",
+                    headers: {
+                        Cookie: cookieStore.toString(),
+                        Accept: "application/json",
+                    },
+                    cache: "no-store",
+                });
+                return await mapFetchResponse(res);
+            } catch (error) {
+                return { data: null, error: { message: 'Failed to fetch all reviews', error } };
+            }
+        },
     },
 
     // Client-side methods (use in client components)
@@ -202,5 +221,9 @@ export const reviewService = {
 
     deleteReviewByAdmin: async (id: string): Promise<ApiResponse<any>> => {
         return httpClient.delete<any>(`/reviews/admin/${id}`);
+    },
+
+    getAllReviews: async (filters: any = {}, options: any = {}): Promise<ApiResponse<ReviewResponse>> => {
+        return httpClient.get<ReviewResponse>('/reviews/admin/all', { params: { ...filters, ...options } });
     },
 };
