@@ -16,14 +16,14 @@ export const adminRoutes: Routes[] = [
                 icon: <Tags size={20} />,
             },
             {
-                title: "Event Mesh",
+                title: "Events",
                 url: "/admin-dashboard/events",
                 icon: <CalendarDays size={20} />,
             },
 
             {
-                title: "Attendees",
-                url: "/admin-dashboard/participants",
+                title: "Participations",
+                url: "/admin-dashboard/participations",
                 icon: <ClipboardList size={20} />,
             },
 

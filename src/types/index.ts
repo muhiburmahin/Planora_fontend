@@ -9,6 +9,7 @@ export interface ApiMeta {
 }
 
 export interface ApiResponse<T> {
+  error: any;
   success: boolean;
   message: string;
   data: T;

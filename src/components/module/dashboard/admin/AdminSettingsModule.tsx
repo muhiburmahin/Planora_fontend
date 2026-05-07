@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import { Shield, Lock, Globe, Server, Save, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 export function AdminSettingsModule() {
   const handleSave = () => {
@@ -14,7 +14,7 @@ export function AdminSettingsModule() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8"
@@ -25,7 +25,7 @@ export function AdminSettingsModule() {
           <p className="text-sm font-medium text-slate-500">Configure global platform security and operational parameters.</p>
         </div>
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-100 text-secondary-600 shadow-inner group transition-all hover:scale-110">
-           <Shield className="h-7 w-7" />
+          <Shield className="h-7 w-7" />
         </div>
       </div>
 
@@ -33,8 +33,8 @@ export function AdminSettingsModule() {
         <Card className="border-0 bg-white shadow-xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
           <CardHeader>
             <div className="flex items-center gap-3">
-               <Globe className="h-5 w-5 text-primary-500" />
-               <CardTitle className="text-lg font-black uppercase tracking-tight">Access Control</CardTitle>
+              <Globe className="h-5 w-5 text-primary-500" />
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Access Control</CardTitle>
             </div>
             <CardDescription className="text-xs font-medium">Manage global registration and visibility.</CardDescription>
           </CardHeader>
@@ -59,8 +59,8 @@ export function AdminSettingsModule() {
         <Card className="border-0 bg-white shadow-xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
           <CardHeader>
             <div className="flex items-center gap-3">
-               <Zap className="h-5 w-5 text-amber-500" />
-               <CardTitle className="text-lg font-black uppercase tracking-tight">Performance Mesh</CardTitle>
+              <Zap className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Performance Mesh</CardTitle>
             </div>
             <CardDescription className="text-xs font-medium">Optimize platform responsiveness and caching.</CardDescription>
           </CardHeader>
@@ -84,13 +84,13 @@ export function AdminSettingsModule() {
       </div>
 
       <div className="flex justify-end">
-         <Button 
-            onClick={handleSave}
-            className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest hover:bg-slate-800 shadow-2xl transition-all active:scale-95"
-         >
-            <Save className="h-5 w-5 mr-2" />
-            Synchronize Protocols
-         </Button>
+        <Button
+          onClick={handleSave}
+          className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest hover:bg-slate-800 shadow-2xl transition-all active:scale-95"
+        >
+          <Save className="h-5 w-5 mr-2" />
+          Synchronize Protocols
+        </Button>
       </div>
     </motion.div>
   );

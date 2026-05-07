@@ -49,7 +49,9 @@ type EventItem = {
   type: EventType;
   status: EventStatus;
   isPublished: boolean;
+  isOnline: boolean;
   registrationFee: number;
+  maxParticipants?: number;
   category?: { id: string; name: string } | null;
   organizer?: { id: string; name?: string | null } | null;
 };
@@ -84,6 +86,10 @@ const updateDefaults: EventUpdateInput = {
   registrationFee: 0,
   status: EventStatus.UPCOMING,
   isPublished: true,
+  time: "",
+  venue: "",
+  categoryId: "",
+  type: EventType.PUBLIC
 };
 
 export function EventCrudModule({ title, query }: EventCrudModuleProps) {
@@ -122,20 +128,31 @@ export function EventCrudModule({ title, query }: EventCrudModuleProps) {
 
   const loadEvents = async () => {
     setLoading(true);
-    const response = await eventService.client.list({
-      limit,
-      page,
-      searchTerm,
-      isPublished: 'all', // Admins should see all
-      sortBy: "createdAt",
-      sortOrder: "desc",
-      ...(query || {})
-    });
+    try {
+      const response = await eventService.client.list({
+        limit,
+        page,
+        ...(searchTerm ? { searchTerm } : {}),
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        ...(query || {})
+      });
 
-    if (response.success) {
-      const payload = response.data as any;
-      setEvents((payload.data ?? []) as EventItem[]);
-      setTotalPages(payload.meta?.totalPage || 1);
+      if (response.success) {
+        // httpClient returns ApiResponse where data = {data:[], meta:{}}
+        const payload = response.data as any;
+        const eventsArr = Array.isArray(payload) ? payload : (payload?.data ?? []);
+        const meta = payload?.meta ?? null;
+        setEvents(eventsArr as EventItem[]);
+        setTotalPages(meta?.totalPage ?? meta?.totalPages ?? 1);
+      } else {
+        setEvents([]);
+        toast.error("Failed to load events");
+      }
+    } catch (err) {
+      console.error("loadEvents error:", err);
+      setEvents([]);
+      toast.error("Could not connect to server");
     }
     setLoading(false);
   };
@@ -176,6 +193,12 @@ export function EventCrudModule({ title, query }: EventCrudModuleProps) {
       title: event.title,
       description: event.description,
       date: event.date ? new Date(event.date).toISOString().slice(0, 10) : "",
+      time: event.time ?? "",
+      venue: event.venue ?? "",
+      categoryId: event.category?.id ?? "",
+      type: event.type ?? EventType.PUBLIC,
+      isOnline: event.isOnline ?? false,
+      maxParticipants: event.maxParticipants,
       registrationFee: event.registrationFee ?? 0,
       status: event.status,
       isPublished: event.isPublished,
@@ -404,8 +427,8 @@ export function EventCrudModule({ title, query }: EventCrudModuleProps) {
                         {event.registrationFee.toLocaleString()}
                       </div>
                       <p className={`text-[10px] font-black uppercase tracking-widest ${event.status === EventStatus.COMPLETED ? "text-blue-500" :
-                          event.status === EventStatus.CANCELLED ? "text-red-500" :
-                            "text-primary-500"
+                        event.status === EventStatus.CANCELLED ? "text-red-500" :
+                          "text-primary-500"
                         }`}>
                         {event.status}
                       </p>

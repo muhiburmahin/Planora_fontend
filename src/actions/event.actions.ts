@@ -22,6 +22,7 @@ export const createEventAction = async (prevState: any, formData: FormData) => {
 
   revalidatePath('/events');
   revalidatePath('/dashboard');
+  revalidatePath('/admin-dashboard/events');
   return { success: true, message: 'Event created successfully', data: response.data };
 };
 
@@ -41,6 +42,7 @@ export const updateEventAction = async (prevState: any, formData: FormData) => {
   revalidatePath(`/events/${id}`);
   revalidatePath('/events');
   revalidatePath('/dashboard');
+  revalidatePath('/admin-dashboard/events');
   return { success: true, message: 'Event updated successfully', data: response.data };
 };
 
@@ -54,6 +56,7 @@ export const deleteEventAction = async (id: string) => {
 
   revalidatePath('/events');
   revalidatePath('/dashboard');
+  revalidatePath('/admin-dashboard/events');
   return { success: true, message: 'Event deleted successfully' };
 };
 

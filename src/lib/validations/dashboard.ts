@@ -16,7 +16,10 @@ export const eventCreateSchema = z.object({
   venue: z.string().min(1, "Venue is required"),
   categoryId: z.string().min(1, "Category is required"),
   registrationFee: z.coerce.number().min(0, "Fee cannot be negative").optional(),
-  maxParticipants: z.coerce.number().int().min(1, "Must be at least 1").optional(),
+  maxParticipants: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.number().int().min(1, "Must be at least 1").optional()
+  ),
   isOnline: z.boolean().optional(),
   type: z.nativeEnum(EventType).default(EventType.PUBLIC),
 });
@@ -27,7 +30,16 @@ export const eventUpdateSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
   date: z.string().min(1, "Date is required"),
+  time: z.string().min(1, "Time is required"),
+  venue: z.string().min(1, "Venue is required"),
+  categoryId: z.string().min(1, "Category is required"),
   registrationFee: z.coerce.number().min(0, "Fee cannot be negative").optional(),
+  maxParticipants: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.number().int().min(1, "Must be at least 1").optional()
+  ),
+  isOnline: z.boolean().optional(),
+  type: z.nativeEnum(EventType).default(EventType.PUBLIC),
   status: z.nativeEnum(EventStatus),
   isPublished: z.boolean().optional(),
 });
