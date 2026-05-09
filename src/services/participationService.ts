@@ -1,4 +1,4 @@
-﻿import { httpClient } from '@/lib/axios/httpClient';
+import { httpClient } from '@/lib/axios/httpClient';
 import { ApiResponse } from '@/types/api.types';
 import { JoinEventPayload, Participation, ParticipationFilters, ParticipationOptions, ParticipationResponse, UpdateStatusPayload } from '@/types/participition';
 
@@ -15,7 +15,7 @@ const joinEvent = async (payload: JoinEventPayload): Promise<ApiResponse<Partici
   return httpClient.post<Participation>('/participations/join', payload);
 };
 
-const getMyParticipations = async (options?: ParticipationOptions): Promise<ApiResponse<ParticipationResponse>> => {
+const getMyParticipations = async (options?: ParticipationFilters & ParticipationOptions): Promise<ApiResponse<ParticipationResponse>> => {
   return httpClient.get<ParticipationResponse>('/participations/my-participations', { params: options });
 };
 
@@ -55,7 +55,7 @@ const serverJoinEvent = async (payload: JoinEventPayload) => {
   }
 };
 
-const serverGetMyParticipations = async (options?: ParticipationOptions) => {
+const serverGetMyParticipations = async (options?: ParticipationFilters & ParticipationOptions) => {
   try {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();

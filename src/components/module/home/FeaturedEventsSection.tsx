@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 
 import { Event } from '@/types/event';
-import EventCard from './EventCard';
+import EventCard from '../shared/EventCard';
 
 export interface FeaturedEventsSectionProps {
     initialEvents?: any[];

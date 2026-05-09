@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import authClient from '@/lib/auth-client';
 import { httpClient } from '@/lib/axios/httpClient';
 
@@ -17,6 +16,7 @@ export const authService = {
     server: {
         getMe: async () => {
             try {
+                const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
                 const res = await fetch(`${API_URL}/me`, {
                     method: "GET",
@@ -85,6 +85,7 @@ export const authService = {
         },
         changePassword: async (oldPassword: string, newPassword: string) => {
             try {
+                const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
                 const res = await fetch(`${API_URL}/change-password`, {
                     method: "POST",
@@ -103,6 +104,7 @@ export const authService = {
         },
         refreshToken: async () => {
             try {
+                const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
                 const res = await fetch(`${API_URL}/refresh-token`, {
                     method: "POST",
@@ -119,6 +121,7 @@ export const authService = {
         },
         logout: async () => {
             try {
+                const { cookies } = await import("next/headers");
                 const cookieStore = await cookies();
                 const res = await fetch(`${API_URL}/logout`, {
                     method: "POST",

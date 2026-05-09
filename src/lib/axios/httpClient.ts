@@ -55,7 +55,7 @@ instance.interceptors.response.use(
                 try {
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
-                    if (typeof window !== "undefined") {
+                    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
                         window.location.href = "/login";
                     }
                 } catch { }

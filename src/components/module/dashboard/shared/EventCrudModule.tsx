@@ -28,7 +28,7 @@ import {
   Image as ImageIcon,
   UserPlus
 } from "lucide-react";
-import InviteUserModal from "../../events/InviteUserModal";
+import InviteModal from "../../events/InviteUserModal";
 import { toast } from "sonner";
 import { EventStatus, EventType } from "@/types/enums";
 import { categoryService } from "@/services/categoryService";
@@ -113,11 +113,10 @@ export function EventCrudModule({ title, query: filterQuery }: EventCrudModulePr
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<EventItem | null>(null);
+  const [inviteEvent, setInviteEvent] = useState<EventItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [invitingEvent, setInvitingEvent] = useState<{ id: string, title: string } | null>(null);
   const [page, setPage] = useState(1);
   const limit = 8;
 
@@ -593,11 +592,8 @@ export function EventCrudModule({ title, query: filterQuery }: EventCrudModulePr
                       <div className="flex justify-end gap-3">
                         <button
                           className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-primary-50 hover:text-primary-600 transition-all hover:scale-110"
-                          onClick={() => {
-                            setInvitingEvent({ id: event.id, title: event.title });
-                            setInviteOpen(true);
-                          }}
                           title="Invite Participants"
+                          onClick={() => setInviteEvent(event)}
                         >
                           <UserPlus className="h-5 w-5" />
                         </button>
@@ -639,72 +635,71 @@ export function EventCrudModule({ title, query: filterQuery }: EventCrudModulePr
 
         {/* Mobile View: Event Cards */}
         <div className="block md:hidden">
-            {loading ? (
-                <div className="p-6 space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-48 rounded-3xl bg-slate-100 animate-pulse" />
-                    ))}
-                </div>
-            ) : (
-                <div className="divide-y divide-slate-50 dark:divide-slate-800">
-                    <AnimatePresence>
-                        {events.map((event: any, index: number) => (
-                            <motion.div 
-                                key={event.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="p-6 space-y-4"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
-                                            <Calendar className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[180px]">{event.title}</h3>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase">{event.category?.name || 'Global'}</p>
-                                        </div>
-                                    </div>
-                                    <Badge className={`rounded-lg border-0 px-2 py-1 text-[9px] font-black uppercase ${
-                                        event.isPublished ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
-                                    }`}>
-                                        {event.isPublished ? "Live" : "Draft"}
-                                    </Badge>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 px-1">
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase text-slate-400">Fee</p>
-                                        <p className="text-xs font-black text-slate-900 dark:text-white">৳{event.registrationFee.toLocaleString()}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase text-slate-400">Date</p>
-                                        <p className="text-xs font-black text-slate-500">
-                                            {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button 
-                                        variant="outline" 
-                                        className="flex-1 h-11 rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest hover:bg-primary-50 hover:text-primary-600"
-                                        onClick={() => openEdit(event)}
-                                    >
-                                        Modify
-                                    </Button>
-                                    <Button 
-                                        variant="outline" 
-                                        className="flex-1 h-11 rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest text-rose-500 hover:bg-rose-50"
-                                        onClick={() => onDelete(event.id)}
-                                    >
-                                        Purge
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-            )}
+          {loading ? (
+            <div className="p-6 space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-48 rounded-3xl bg-slate-100 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-50 dark:divide-slate-800">
+              <AnimatePresence>
+                {events.map((event: any, index: number) => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="p-6 space-y-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+                          <Calendar className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[180px]">{event.title}</h3>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{event.category?.name || 'Global'}</p>
+                        </div>
+                      </div>
+                      <Badge className={`rounded-lg border-0 px-2 py-1 text-[9px] font-black uppercase ${event.isPublished ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
+                        }`}>
+                        {event.isPublished ? "Live" : "Draft"}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 px-1">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black uppercase text-slate-400">Fee</p>
+                        <p className="text-xs font-black text-slate-900 dark:text-white">৳{event.registrationFee.toLocaleString()}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black uppercase text-slate-400">Date</p>
+                        <p className="text-xs font-black text-slate-500">
+                          {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 h-11 rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest hover:bg-primary-50 hover:text-primary-600"
+                        onClick={() => openEdit(event)}
+                      >
+                        Modify
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 h-11 rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest text-rose-500 hover:bg-rose-50"
+                        onClick={() => onDelete(event.id)}
+                      >
+                        Purge
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         {/* Pagination Controls */}
@@ -929,17 +924,15 @@ export function EventCrudModule({ title, query: filterQuery }: EventCrudModulePr
           </form>
         </DialogContent>
       </Dialog>
-      {/* Invite Modal */}
-      {inviteOpen && invitingEvent && (
-        <InviteUserModal
-          eventId={invitingEvent.id}
-          eventTitle={invitingEvent.title}
-          onClose={() => {
-            setInviteOpen(false);
-            setInvitingEvent(null);
-          }}
+
+      {inviteEvent && (
+        <InviteModal
+          eventId={inviteEvent.id}
+          eventTitle={inviteEvent.title}
+          onClose={() => setInviteEvent(null)}
         />
       )}
+
     </motion.div>
   );
 }

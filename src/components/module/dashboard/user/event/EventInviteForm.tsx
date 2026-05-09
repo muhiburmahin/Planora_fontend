@@ -3,10 +3,10 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Share2, Sparkles } from "lucide-react";
-import InviteUserModal from "@/components/module/events/InviteUserModal";
+import InviteModal from "@/components/module/events/InviteUserModal";
 
 export function EventInviteForm({ eventId, eventTitle }: { eventId: string; eventTitle: string }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   return (
     <div className="relative mt-12 p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-slate-900 to-primary-900 text-white overflow-hidden shadow-2xl shadow-primary-500/20 border border-white/5">
@@ -30,7 +30,7 @@ export function EventInviteForm({ eventId, eventTitle }: { eventId: string; even
 
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <Button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setShowInviteModal(true)}
             className="h-16 px-8 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 font-black text-sm uppercase tracking-widest flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10"
           >
             <UserPlus className="w-5 h-5" />
@@ -46,11 +46,11 @@ export function EventInviteForm({ eventId, eventTitle }: { eventId: string; even
         </div>
       </div>
 
-      {isModalOpen && (
-        <InviteUserModal
+      {showInviteModal && (
+        <InviteModal
           eventId={eventId}
           eventTitle={eventTitle}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => setShowInviteModal(false)}
         />
       )}
     </div>

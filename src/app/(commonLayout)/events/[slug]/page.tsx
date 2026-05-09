@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import EventDetailsPage from "@/components/module/events/EventDitailsPage";
+import EventDetailsPage from "@/components/module/events/EventDetailsPage";
 
 interface PageProps {
   params: Promise<{ slug: string }>;

@@ -1,309 +1,212 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
-import { LayoutGrid, LayoutList, Loader2, Frown, Sparkles } from "lucide-react";
-import EventCard from "./EventCard";
-import EventFilters from "./EventFilters";
-import eventService from "@/services/eventService";
-import categoryService from "@/services/categoryService";
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Filter, Search, Grid, List, Sparkles, SlidersHorizontal, ArrowLeft, ArrowRight } from "lucide-react";
+import EventFilterSidebar from "./EventFilterSidebar";
 
-interface Event {
-  id: string;
-  title: string;
-  slug: string;
-  shortDescription?: string;
-  date: string;
-  time: string;
-  venue: string;
-  isOnline: boolean;
-  type: "PUBLIC" | "PRIVATE";
-  registrationFee: number;
-  status: string;
-  isFeatured: boolean;
-  averageRating: number;
-  totalReviews: number;
-  images: { url: string }[];
-  category: { name: string; icon?: string };
-  organizer: { name: string; image?: string };
-  _count?: { participations: number };
-}
+import { eventService } from "@/services/eventService";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import EventCard from "../shared/EventCard";
 
-interface Meta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPage: number;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  icon?: string;
-  slug: string;
-}
-
-export default function EventsPage() {
-  const searchParams = useSearchParams();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [meta, setMeta] = useState<Meta | null>(null);
+const EventPage = () => {
+  const [filters, setFilters] = useState<any>({});
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [meta, setMeta] = useState<any>(null);
+
+  // পেজিনেশন স্টেট
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // প্রতি পেজে ৯টি ইভেন্ট (৩টি রো, প্রতি রো-তে ৩টি)
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const query: Record<string, string | number> = {
+      // API তে পেজ এবং লিমিট পাঠানো হচ্ছে
+      const res = await eventService.client.list({
+        ...filters,
         page: currentPage,
-        limit: 12,
-      };
-      
-      // Add filter parameters from URL
-      searchParams.forEach((value, key) => {
-        if (value) {
-          query[key] = value;
-        }
+        limit: itemsPerPage
       });
 
-      const response = await eventService.client.list(query);
-      if (!response.success) {
-        console.error("Failed to fetch events:", response.message);
-        setEvents([]);
-        setMeta(null);
-      } else if (response.data && response.data.data) {
-        setEvents(response.data.data);
-        setMeta(response.data.meta ?? null);
-      } else {
-        setEvents([]);
-        setMeta(null);
+      if (res.success) {
+        setEvents(Array.isArray(res.data) ? res.data : res.data?.data || []);
+        setMeta(res.data?.meta || null);
       }
-    } catch (err) {
-      console.error("Failed to fetch events:", err);
-      setEvents([]);
-      setMeta(null);
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
     } finally {
       setLoading(false);
     }
-  }, [searchParams, currentPage]);
-
-  const fetchFeatured = useCallback(async () => {
-    try {
-      const response = await eventService.client.list({ isFeatured: true, limit: 4, status: "UPCOMING" });
-      if (!response.success) {
-        console.error("Failed to fetch featured events:", response.message);
-        setFeaturedEvents([]);
-      } else if (response.data && response.data.data) {
-        setFeaturedEvents(response.data.data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch featured events:", err);
-      setFeaturedEvents([]);
-    }
-  }, []);
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await categoryService.getAllCategories({ isActive: true }, { limit: 50 });
-      if (response?.success) {
-        setCategories(response.data?.data ?? response.data ?? []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
+  }, [filters, currentPage]); // ফিল্টার বা পেজ নম্বর পরিবর্তন হলে ডাটা ফেচ হবে
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
-  useEffect(() => {
-    fetchFeatured();
-    fetchCategories();
-  }, [fetchFeatured, fetchCategories]);
-
-  // Reset page when filters change
-  useEffect(() => {
+  // ফিল্টার পরিবর্তন হলে প্রথম পেজে ফেরত নিয়ে যাওয়া
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(newFilters);
     setCurrentPage(1);
-  }, [searchParams]);
-
-  const hasFilters =
-    searchParams.get("searchTerm") ||
-    searchParams.get("categoryId") ||
-    searchParams.get("status") ||
-    searchParams.get("type") ||
-    searchParams.get("cost");
-  const featuredIds = new Set(featuredEvents.map((event) => event.id));
-  const visibleEvents = hasFilters ? events : events.filter((event) => !featuredIds.has(event.id));
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50/60 via-white to-purple-50/40">
-      {/* Hero Banner */}
-      {!hasFilters && (
-        <div className="bg-gradient-primary text-white py-16 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-yellow-300" />
-              <span className="text-sm font-semibold text-yellow-200 uppercase tracking-widest">Discover Events</span>
-              <Sparkles className="w-5 h-5 text-yellow-300" />
+    <div className="min-h-screen bg-[#FDFDFF] dark:bg-gray-950">
+      {/* Hero Section */}
+      <section className="relative pt-28 pb-20 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative">
+          <div className="flex flex-col md:flex-row items-end justify-between gap-6 mb-12">
+            <div className="max-w-2xl">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs font-bold uppercase tracking-wider mb-4"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>Discover Experiences</span>
+              </motion.div>
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white leading-[1.1]"
+              >
+                Find Your Next <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-500">
+                  Great Event
+                </span>
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-6 text-lg text-gray-500 dark:text-gray-400 font-medium"
+              >
+                Browse through hundreds of public and private events.
+              </motion.p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
-              Find Your Next<br />
-              <span className="text-yellow-300">Unforgettable</span> Experience
-            </h1>
-            <p className="text-lg text-white/80 max-w-xl mx-auto">
-              Browse thousands of events — concerts, workshops, conferences, meetups, and more.
-            </p>
-          </div>
-        </div>
-      )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Featured Events */}
-        {!hasFilters && featuredEvents.length > 0 && (
-          <div className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-amber-500 text-lg">⭐</span>
-              <h2 className="text-xl font-bold text-gray-900">Featured Events</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {featuredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-            <div className="border-b border-gray-200 mt-8" />
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="mb-6">
-          <EventFilters categories={categories} />
-        </div>
-
-        {/* Header Row */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            {loading ? (
-              <div className="h-5 w-40 bg-gray-200 rounded animate-pulse" />
-            ) : (
-              <p className="text-sm text-gray-600">
-                <span className="font-bold text-gray-900">{meta?.total ?? 0}</span> events found
-                {hasFilters && <span className="text-primary-600"> · Filtered</span>}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? "bg-primary-100 text-primary-600" : "text-gray-400 hover:bg-gray-100"}`}
+            <Button
+              variant="outline"
+              className="md:hidden rounded-2xl h-12 px-6 border-gray-200 dark:border-gray-800"
+              onClick={() => setIsSidebarOpen(true)}
             >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-lg transition-colors ${viewMode === "list" ? "bg-primary-100 text-primary-600" : "text-gray-400 hover:bg-gray-100"}`}
-            >
-              <LayoutList className="w-4 h-4" />
-            </button>
+              <SlidersHorizontal className="w-4 h-4 mr-2" />
+              Filters
+            </Button>
           </div>
-        </div>
 
-        {/* Events Grid/List */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
-                <div className="h-52 bg-gray-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="h-3 bg-gray-200 rounded w-2/3" />
-                </div>
+          <div className="flex flex-col md:flex-row gap-10">
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:block w-72 flex-shrink-0">
+              <div className="sticky top-24 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/50 dark:shadow-none bg-white dark:bg-gray-900">
+                <EventFilterSidebar filters={filters} setFilters={handleFilterChange} />
               </div>
-            ))}
-          </div>
-        ) : visibleEvents.length === 0 ? (
-          <div className="py-24 text-center">
-            <Frown className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-700 mb-2">No events found</h3>
-            <p className="text-gray-400 text-sm max-w-sm mx-auto">
-              Try adjusting your search filters or check back later for new events.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                  : "flex flex-col gap-4"
-              }
-            >
-              {visibleEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  variant={viewMode === "list" ? "compact" : "default"}
-                />
-              ))}
-            </div>
+            </aside>
 
-            {/* Pagination */}
-            {meta && meta.totalPage > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-10">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  ← Prev
-                </button>
+            {/* Main Content */}
+            <div className="flex-1">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center min-h-[400px]">
+                  <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
+                  <p className="mt-4 text-gray-500 font-medium animate-pulse">Gathering amazing events...</p>
+                </div>
+              ) : events.length > 0 ? (
+                <div className="space-y-12">
+                  {/* Grid layout: Desktop-এ ৩টি করে কার্ড (৩ কলাম) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {events.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
 
-                <div className="flex gap-1">
-                  {Array.from({ length: Math.min(meta.totalPage, 7) }, (_, i) => {
-                    const page = i + 1;
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                          currentPage === page
-                            ? "bg-primary-600 text-white"
-                            : "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                        }`}
+                  {/* Pagination Controls */}
+                  {meta && meta.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 pt-10 border-t border-gray-100 dark:border-gray-800">
+                      <Button
+                        variant="outline"
+                        disabled={currentPage === 1}
+                        onClick={() => {
+                          setCurrentPage(prev => prev - 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="rounded-xl"
                       >
-                        {page}
-                      </button>
-                    );
-                  })}
-                  {meta.totalPage > 7 && (
-                    <>
-                      <span className="flex items-center px-1 text-gray-400">...</span>
-                      <button
-                        onClick={() => setCurrentPage(meta.totalPage)}
-                        className={`w-9 h-9 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors`}
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Previous
+                      </Button>
+
+                      <span className="text-sm font-medium">
+                        Page {currentPage} of {meta.totalPages}
+                      </span>
+
+                      <Button
+                        variant="outline"
+                        disabled={currentPage === meta.totalPages}
+                        onClick={() => {
+                          setCurrentPage(prev => prev + 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="rounded-xl"
                       >
-                        {meta.totalPage}
-                      </button>
-                    </>
+                        Next <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
                   )}
                 </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-10 bg-white dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
+                  <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
+                    <Search className="w-10 h-10 text-gray-300" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">No events found</h3>
+                  <Button
+                    onClick={() => handleFilterChange({})}
+                    variant="link"
+                    className="mt-4 text-primary-600 font-bold"
+                  >
+                    Clear all filters
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(meta.totalPage, p + 1))}
-                  disabled={currentPage === meta.totalPage}
-                  className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next →
-                </button>
-              </div>
-            )}
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] md:hidden"
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              className="fixed inset-y-0 left-0 w-[85%] max-w-[350px] bg-white dark:bg-gray-950 z-[101] md:hidden shadow-2xl"
+            >
+              <EventFilterSidebar
+                filters={filters}
+                setFilters={handleFilterChange}
+                isMobile
+                onClose={() => setIsSidebarOpen(false)}
+              />
+            </motion.div>
           </>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
-}
+};
+
+export default EventPage;
