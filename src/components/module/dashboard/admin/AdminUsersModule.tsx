@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { userService } from "@/services/userService";
 import { changeUserStatusAction, changeUserRoleAction } from "@/actions/user.actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -36,33 +37,20 @@ import { Input } from "@/components/ui/input";
 import { TableSkeleton } from "../shared/TableSkeleton";
 
 export function AdminUsersModule() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const limit = 8;
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    const response = await userService.getAllUsers({ searchTerm, status: statusFilter }, { page, limit });
-    if (response.success) {
-      const payload = response.data as any;
-      setUsers(payload.data ?? payload);
-      setTotalPages(payload.meta?.totalPage || 1);
-    } else {
-      toast.error("Failed to load user directory");
-    }
-    setLoading(false);
-  };
+  const { data: usersResponse, isLoading: loading } = useQuery({
+    queryKey: ["admin-users", searchTerm, statusFilter, page],
+    queryFn: () => userService.getAllUsers({ searchTerm, status: statusFilter }, { page, limit }),
+    refetchInterval: 60000,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-        fetchUsers();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchTerm, page, statusFilter]);
+  const users = (usersResponse?.data as any)?.data ?? usersResponse?.data ?? [];
+  const totalPages = (usersResponse?.data as any)?.meta?.totalPage || 1;
 
   const handleStatusChange = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
@@ -73,7 +61,8 @@ export function AdminUsersModule() {
     const result = await changeUserStatusAction(null, formData);
     if (result.success) {
       toast.success(`User access ${newStatus === 'ACTIVE' ? 'restored' : 'suspended'}`);
-      fetchUsers();
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
     } else {
       toast.error(result.message);
     }
@@ -88,7 +77,8 @@ export function AdminUsersModule() {
     const result = await changeUserRoleAction(null, formData);
     if (result.success) {
       toast.success(`Privileges updated to ${newRole.toLowerCase()}`);
-      fetchUsers();
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
     } else {
       toast.error(result.message);
     }
@@ -130,7 +120,8 @@ export function AdminUsersModule() {
       </div>
 
       <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
-        <div className="overflow-x-auto">
+        {/* Desktop View: Advanced Ledger Table */}
+        <div className="hidden md:block overflow-x-auto">
           {loading ? (
              <TableSkeleton columns={5} rows={8} />
           ) : (
@@ -146,13 +137,13 @@ export function AdminUsersModule() {
               </TableHeader>
               <TableBody>
                 <AnimatePresence mode="popLayout">
-                {users.map((user, index) => (
+                {users.map((user: any, index: number) => (
                   <motion.tr 
                     key={user.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                    className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                   >
                     <TableCell className="px-8 py-5">
                       <div className="flex items-center gap-4">
@@ -260,6 +251,82 @@ export function AdminUsersModule() {
               </TableBody>
             </Table>
           )}
+        </div>
+
+        {/* Mobile View: Intelligence Cards */}
+        <div className="block md:hidden">
+            {loading ? (
+                <div className="p-6 space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-48 rounded-3xl bg-slate-100 animate-pulse" />
+                    ))}
+                </div>
+            ) : (
+                <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                    <AnimatePresence>
+                        {users.map((user: any, index: number) => (
+                            <motion.div 
+                                key={user.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="p-6 space-y-6"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 flex items-center justify-center font-black text-white shadow-lg">
+                                            {user.name?.[0] || 'U'}
+                                        </div>
+                                        <div>
+                                            <p className="text-base font-black text-slate-900 dark:text-white truncate max-w-[150px]">{user.name}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate max-w-[150px]">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <Badge className={`rounded-lg border-0 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${
+                                        user.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 shadow-sm' : 'bg-rose-50 text-rose-600 shadow-sm'
+                                    }`}>
+                                        {user.status === 'ACTIVE' ? 'Operational' : 'Restricted'}
+                                    </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6 px-1">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.1em]">Protocol Level</p>
+                                        <Badge className={`bg-transparent p-0 text-xs font-black uppercase tracking-widest ${
+                                            user.role === 'ADMIN' ? 'text-purple-600' : 'text-blue-600'
+                                        }`}>
+                                            {user.role}
+                                        </Badge>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.1em]">Member Since</p>
+                                        <p className="text-xs font-black text-slate-700 dark:text-slate-200">
+                                            {new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                    <Button 
+                                        variant="outline" 
+                                        className={`flex-1 h-12 rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${
+                                            user.status === 'ACTIVE' ? 'hover:bg-rose-50 hover:text-rose-600' : 'hover:bg-emerald-50 hover:text-emerald-600'
+                                        }`}
+                                        onClick={() => handleStatusChange(user.id, user.status)}
+                                    >
+                                        {user.status === 'ACTIVE' ? 'Suspend' : 'Restore'}
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        className="flex-1 h-12 rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 hover:bg-primary-50 hover:text-primary-600"
+                                        onClick={() => handleRoleChange(user.id, user.role)}
+                                    >
+                                        {user.role === 'ADMIN' ? 'Demote' : 'Promote'}
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+            )}
         </div>
 
         {/* Intelligence Pagination */}

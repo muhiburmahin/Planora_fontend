@@ -7,7 +7,10 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/events`;
 // Helper for mapping fetch responses
 async function mapFetchResponse(res: Response) {
     const result = await res.json().catch(() => null);
-    if (!res.ok) return { data: null, error: { message: result?.message || 'Request failed', status: res.status, raw: result } };
+    if (!res.ok) {
+        console.error(`❌ Server Error [${res.status}]:`, result);
+        return { data: null, error: { message: result?.message || 'Request failed', status: res.status, raw: result } };
+    }
     return { data: result?.data ?? result, error: null };
 }
 

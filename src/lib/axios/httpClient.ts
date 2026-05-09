@@ -36,7 +36,7 @@ instance.interceptors.response.use(
         const originalRequest = error.config;
 
         // Attempt refresh once on 401
-        if (status === 401 && !originalRequest._retry) {
+        if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh-token')) {
             originalRequest._retry = true;
             try {
                 const refreshRes = await instance.post('/auth/refresh-token', {});
@@ -52,7 +52,13 @@ instance.interceptors.response.use(
                     return instance.request(originalRequest);
                 }
             } catch (refreshError) {
-                try { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); } catch { }
+                try {
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    if (typeof window !== "undefined") {
+                        window.location.href = "/login";
+                    }
+                } catch { }
                 return Promise.reject({ success: false, message: 'Session expired. Please login again.', status: 401 });
             }
         }

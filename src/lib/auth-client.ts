@@ -36,9 +36,9 @@ export const authClient: any = {
         // server can clear HttpOnly cookies even if access token is expired.
         const base = process.env.NEXT_PUBLIC_API_URL || ''
         try {
-            await axios.post(`${base}/auth/logout`, {}, { withCredentials: true })
+            // Using httpClient ensures the correct base URL (v1) is used
+            await httpClient.post("/auth/logout", {});
         } catch (err) {
-            // ignore network errors here; we'll still clear client-side tokens
             console.warn('Logout request failed', err)
         }
 

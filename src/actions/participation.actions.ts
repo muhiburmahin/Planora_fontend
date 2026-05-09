@@ -36,7 +36,7 @@ export const updateParticipationStatusAction = async (prevState: any, formData: 
   }
 
   revalidatePath('/dashboard');
-  revalidatePath('/admin-dashboard/participants');
+  revalidatePath('/admin-dashboard/participations');
   return { success: true, message: 'Participation status updated successfully', data: response.data };
 };
 

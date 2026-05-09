@@ -7,7 +7,7 @@ export interface Participation {
   createdAt: string;
   updatedAt: string;
   user?: { name: string; email: string; image?: string };
-  event?: { title: string; date: string; venue: string; registrationFee: number };
+  event?: { title: string; date: string; time: string; venue: string; registrationFee: number; shortDescription?: string };
   payments?: any[];
 }
 

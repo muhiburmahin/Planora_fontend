@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // কারেন্ট পাথ চেক করার জন্য
+import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -19,8 +19,7 @@ import {
 import { Roles } from "@/constants/role";
 import { adminRoutes } from "@/routes/adminRoute";
 import { userRoutes } from "@/routes/userRoutes";
-import { Routes } from "@/types/route.type";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Home } from "lucide-react"; // Home icon import
 import { UserDropdown } from "./UserDropdown";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -33,83 +32,107 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
-  const pathname = usePathname(); 
-  const { setOpenMobile } = useSidebar(); 
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
-  let routes: Routes[] = [];
-
-  const role = user?.role?.toUpperCase();
-
-  if (role === Roles.ADMIN) {
-    routes = adminRoutes;
-  } else if (role === Roles.USER) {
-    routes = userRoutes;
-  }
+  const routes = React.useMemo(() => {
+    const role = user?.role?.toUpperCase();
+    if (role === Roles.ADMIN) return adminRoutes;
+    if (role === Roles.USER) return userRoutes;
+    return [];
+  }, [user?.role]);
 
   return (
-    <Sidebar {...props} className="dark:bg-[#0f172a] border-r dark:border-slate-800 transition-colors">
-      <SidebarContent>
-        {routes.length === 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-red-500 font-bold">
-              No routes found for {user.role}
-            </SidebarGroupLabel>
-          </SidebarGroup>
-        )}
+    <Sidebar {...props} className="border-r border-slate-200 dark:border-slate-800 transition-colors">
+      <SidebarContent className="bg-white dark:bg-[#0f172a]">
+
+        {/* Brand Logo Section */}
+        <div className="px-6 py-10">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:scale-105 transition-transform">
+              <span className="text-white font-black text-xl">P</span>
+            </div>
+            <span className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent">
+              PLANORA
+            </span>
+          </Link>
+        </div>
+
+        {/* Navigation Groups */}
+        <SidebarGroup className="px-4">
+          <SidebarGroupLabel className="px-3 mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+            Main Menu
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {/* Home Option Add Kora Hoyeche */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="h-auto p-0 hover:bg-transparent">
+                  <Link href="/" className="w-full group">
+                    <div className="flex items-center gap-4 w-full h-[50px] px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                      <div className="text-slate-400 group-hover:text-primary-500 transition-colors">
+                        <Home size={20} strokeWidth={2} />
+                      </div>
+                      <span className="text-sm font-bold tracking-tight uppercase text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white">
+                        Back to Home
+                      </span>
+                    </div>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {routes.map((group) => (
           <SidebarGroup key={group.title} className="px-4">
-            <SidebarGroupLabel className="h-auto px-2 mt-8 mb-6">
-              <span className="text-[28px] font-black uppercase tracking-wider bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(96,165,250,0.3)]">
-                {group.title}
-              </span>
+            <SidebarGroupLabel className="px-3 mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              {group.title}
             </SidebarGroupLabel>
 
             <SidebarGroupContent>
-              <SidebarMenu className="gap-5">
+              <SidebarMenu className="gap-2">
                 {group.items?.map((item) => {
-                  const isOverview =
-                    item.url === "/admin-dashboard" || item.url === "/dashboard";
-                  const isActive = isOverview
+                  const isDashboard = item.url === "/dashboard" || item.url === "/admin-dashboard";
+                  const isActive = isDashboard
                     ? pathname === item.url
-                    : pathname === item.url || pathname.startsWith(`${item.url}/`);
+                    : pathname.startsWith(item.url);
+
+                  // TS Error Fix: Casting icon as any to avoid call signature error
+                  const Icon = item.icon as any;
 
                   return (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild className="h-auto w-full p-0 hover:bg-transparent">
+                      <SidebarMenuButton asChild className="h-auto p-0 hover:bg-transparent">
                         <Link
                           href={item.url}
-                          onClick={() => setOpenMobile(false)} 
-                          className="w-full block"
+                          onClick={() => setOpenMobile(false)}
+                          className="w-full group"
                         >
-                          {/* Active State Container */}
-                          <div className={`flex items-center p-[2px] rounded-full transition-all duration-300 ${isActive
-                            ? "bg-gradient-to-r from-blue-500 to-green-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-[1.02]"
-                            : "bg-slate-200 dark:bg-slate-800 hover:bg-gradient-to-r hover:from-blue-400 hover:to-green-400"
+                          <div className={`flex items-center gap-4 w-full h-[50px] px-4 rounded-xl transition-all duration-300 ${isActive
+                              ? "bg-primary-50 dark:bg-primary-900/10 border-l-4 border-primary-600 shadow-sm"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                             }`}>
 
-                            <div className={`flex items-center gap-4 w-full h-[52px] px-6 rounded-full transition-colors ${isActive
-                              ? "bg-blue-50 dark:bg-[#0f172a] border-transparent"
-                              : "bg-white dark:bg-[#1e293b]"
+                            <div className={`flex shrink-0 transition-colors ${isActive ? "text-primary-600" : "text-slate-400 group-hover:text-primary-400"
                               }`}>
-
-                              <div className={`flex shrink-0 items-center justify-center transition-colors ${isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"
-                                }`}>
-                                {item.icon || <LayoutDashboard size={22} strokeWidth={isActive ? 3 : 2} />}
-                              </div>
-
-                              <span className={`font-black text-[15px] tracking-tight uppercase truncate transition-all ${isActive
-                                ? "bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent"
-                                : "text-slate-600 dark:text-slate-300"
-                                }`}>
-                                {item.title}
-                              </span>
-
-                              {/* Active Indicator Dot */}
-                              {isActive && (
-                                <div className="ml-auto w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] animate-pulse" />
+                              {Icon ? (
+                                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                              ) : (
+                                <LayoutDashboard size={20} />
                               )}
                             </div>
+
+                            <span className={`text-sm font-bold tracking-tight uppercase transition-colors ${isActive
+                                ? "text-primary-700 dark:text-primary-400"
+                                : "text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white"
+                              }`}>
+                              {item.title}
+                            </span>
+
+                            {isActive && (
+                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-secondary-500 animate-pulse" />
+                            )}
                           </div>
                         </Link>
                       </SidebarMenuButton>
@@ -121,8 +144,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
           </SidebarGroup>
         ))}
       </SidebarContent>
+
       <SidebarRail />
-      <SidebarFooter className="border-t dark:border-slate-800 p-4">
+
+      <SidebarFooter className="p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
         <UserDropdown user={user} />
       </SidebarFooter>
     </Sidebar>

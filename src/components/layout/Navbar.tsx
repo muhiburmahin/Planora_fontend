@@ -35,6 +35,7 @@ export function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const [isMarkingAll, setIsMarkingAll] = React.useState(false);
   const { data: userData } = useGetMe();
   const user = userData || null;
 
@@ -57,13 +58,35 @@ export function Navbar() {
     refetchInterval: 30000,
   });
 
-  const notifications = notifResponse?.data?.data ?? [];
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
+  // TypeScript fix: Force cast to any array to prevent 'never' or 'NotificationResponse' issues
+  const notifications = (notifResponse?.data as unknown as any[]) || [];
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await notificationService.markAsRead(id);
+      queryClient.invalidateQueries({ queryKey: ["navbar-notifications"] });
+    } catch (err) {
+      console.error("Failed to mark as read", err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      setIsMarkingAll(true);
+      await notificationService.markAllAsRead();
+      queryClient.invalidateQueries({ queryKey: ["navbar-notifications"] });
+      toast.success("All notifications marked as read");
+    } catch (err) {
+      toast.error("Failed to mark all as read");
+    } finally {
+      setIsMarkingAll(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await fetch("/api/auth/logout", { method: "POST" });
       await authClient.logout().catch(() => null);
       queryClient.setQueryData(["user-me"], null);
       queryClient.removeQueries({ queryKey: ["navbar-notifications"] });
@@ -124,8 +147,8 @@ export function Navbar() {
                           ? "text-white"
                           : "text-primary-100 hover:text-white"
                         : isActive
-                        ? "text-primary-600 dark:text-primary-400"
-                        : "text-slate-600 dark:text-slate-400 hover:text-primary-500"
+                          ? "text-primary-600 dark:text-primary-400"
+                          : "text-slate-600 dark:text-slate-400 hover:text-primary-500"
                     )}
                   >
                     <span className="relative z-10">{link.name}</span>
@@ -162,26 +185,72 @@ export function Navbar() {
                       )}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-80 p-2">
-                    <DropdownMenuLabel className="flex items-center justify-between">
-                      <span>Notifications</span>
-                      <Link href="/dashboard/notifications" className="text-xs text-primary-600 hover:underline">
-                        View all
-                      </Link>
+                  <DropdownMenuContent align="end" className="w-80 p-2 z-[60] bg-white dark:bg-slate-950 shadow-xl border">
+                    <DropdownMenuLabel className="flex items-center justify-between py-2">
+                      <span className="font-bold">Notifications</span>
+                      <div className="flex gap-2">
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleMarkAllAsRead();
+                            }}
+                            disabled={isMarkingAll}
+                            className="text-[10px] text-primary-600 hover:underline font-bold disabled:opacity-50"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                        <Link href="/admin-dashboard/notifications" className="text-[10px] text-slate-500 hover:underline">
+                          View all
+                        </Link>
+                      </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {notifications.length === 0 ? (
-                      <p className="px-2 py-4 text-center text-sm text-slate-500">No notifications yet.</p>
-                    ) : (
-                      notifications.map((item) => (
-                        <DropdownMenuItem key={item.id} asChild className="cursor-pointer rounded-md py-2">
-                          <Link href={item.link || "/dashboard/notifications"} className="flex flex-col items-start">
-                            <p className="text-xs font-medium line-clamp-2">{item.message}</p>
-                            <p className="text-[10px] text-slate-500">{new Date(item.createdAt).toLocaleString()}</p>
-                          </Link>
-                        </DropdownMenuItem>
-                      ))
-                    )}
+                    <div className="max-h-[400px] overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <p className="px-2 py-6 text-center text-sm text-slate-500 italic">No notifications yet.</p>
+                      ) : (
+                        notifications.map((item) => (
+                          <DropdownMenuItem
+                            key={item.id}
+                            asChild
+                            className={cn(
+                              "cursor-pointer rounded-lg py-3 px-3 mb-1 transition-colors",
+                              !item.isRead ? "bg-primary-50/80 dark:bg-primary-900/20 border-l-2 border-primary-500" : "hover:bg-slate-50 dark:hover:bg-slate-900"
+                            )}
+                          >
+                            <div className="flex flex-col gap-1 relative group/item">
+                              <Link
+                                href={item.link || "/admin-dashboard/notifications"}
+                                onClick={() => !item.isRead && handleMarkAsRead(item.id)}
+                                className="flex flex-col items-start"
+                              >
+                                <p className={cn("text-xs leading-relaxed", !item.isRead ? "font-bold text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-400")}>
+                                  {item.message}
+                                </p>
+                                <p className="text-[9px] text-slate-400 mt-1">
+                                  {new Date(item.createdAt).toLocaleString()}
+                                </p>
+                              </Link>
+                              {!item.isRead && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleMarkAsRead(item.id);
+                                  }}
+                                  className="absolute right-0 top-0 h-4 w-4 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                  title="Mark as read"
+                                >
+                                  <div className="h-1.5 w-1.5 rounded-full bg-primary-600" />
+                                </button>
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
@@ -196,7 +265,7 @@ export function Navbar() {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 p-2">
+                  <DropdownMenuContent align="end" className="w-64 p-2 z-[60] bg-white dark:bg-slate-950 shadow-xl border">
                     <DropdownMenuLabel className="flex items-center gap-3 p-3">
                       <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold">
                         {user.name.charAt(0)}

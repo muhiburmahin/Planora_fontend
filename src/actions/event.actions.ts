@@ -5,11 +5,11 @@ import { revalidatePath } from 'next/cache';
 const getReadableMessage = (error: any) => {
   const sources = error?.raw?.errorSources;
   if (Array.isArray(sources) && sources.length > 0) {
-    const first = sources[0];
-    if (first?.path && first?.message) return `${first.path}: ${first.message}`;
-    if (first?.message) return first.message;
+    return sources.map((s: any) =>
+      s.path ? `${s.path}: ${s.message}` : s.message
+    ).join(' | ');
   }
-   return error?.message || 'Request failed';
+  return error?.message || 'Request failed';
 };
 
 export const createEventAction = async (prevState: any, formData: FormData) => {

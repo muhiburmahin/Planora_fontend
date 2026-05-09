@@ -10,6 +10,7 @@ export type CategoryFormInput = z.infer<typeof categoryFormSchema>;
 
 export const eventCreateSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  shortDescription: z.string().max(255, "Short description must be less than 255 characters").optional(),
   description: z.string().min(1, "Description is required"),
   date: z.string().min(1, "Date is required"),
   time: z.string().min(1, "Time is required"),
@@ -21,13 +22,16 @@ export const eventCreateSchema = z.object({
     z.coerce.number().int().min(1, "Must be at least 1").optional()
   ),
   isOnline: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
   type: z.nativeEnum(EventType).default(EventType.PUBLIC),
+  images: z.any().optional(), // For file uploads
 });
 
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
 
 export const eventUpdateSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  shortDescription: z.string().max(255, "Short description must be less than 255 characters").optional(),
   description: z.string().min(1, "Description is required"),
   date: z.string().min(1, "Date is required"),
   time: z.string().min(1, "Time is required"),
@@ -39,9 +43,11 @@ export const eventUpdateSchema = z.object({
     z.coerce.number().int().min(1, "Must be at least 1").optional()
   ),
   isOnline: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
   type: z.nativeEnum(EventType).default(EventType.PUBLIC),
   status: z.nativeEnum(EventStatus),
   isPublished: z.boolean().optional(),
+  images: z.any().optional(),
 });
 
 export type EventUpdateInput = z.infer<typeof eventUpdateSchema>;

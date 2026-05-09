@@ -1,5 +1,5 @@
-import { RoleRouteNotice } from "@/components/module/dashboard/shared/RoleRouteNotice";
+import { AdminParticipantsModule } from "@/components/module/dashboard/admin/AdminParticipantsModule";
 
 export default function Page() {
-    return <RoleRouteNotice message="Use Participants to manage participant requests as admin." />;
+    return <AdminParticipantsModule />
 }

@@ -79,6 +79,6 @@ export async function getUserDashboardData() {
         invitations: invitations.data ?? [],
         participations: participations.data?.data ?? participations.data ?? [],
         reviews: reviews.data?.data ?? reviews.data ?? [],
-        notifications: notifications.data?.data ?? notifications.data ?? [],
+        notifications: notifications.data ?? [],
     };
 }

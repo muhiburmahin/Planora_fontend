@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
@@ -17,8 +17,10 @@ import {
   Loader2,
   AlertCircle,
   Globe,
+  UserPlus,
 } from "lucide-react";
 import JoinEventModal from "./JoinEventModal";
+import InviteUserModal from "./InviteUserModal";
 import eventService from "@/services/eventService";
 import { userService } from "@/services/userService";
 
@@ -51,6 +53,7 @@ export default function EventDetailsPage({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const fetchEvent = useCallback(async () => {
@@ -134,13 +137,24 @@ export default function EventDetailsPage({ slug }: { slug: string }) {
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-50"
-          >
-            <Share2 className="h-3.5 w-3.5" />
-            {copied ? "Copied" : "Share"}
-          </button>
+          <div className="flex items-center gap-2">
+            {isLoggedIn && (
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-purple-50 border border-purple-100 px-3 py-1.5 text-sm font-bold text-purple-700 hover:bg-purple-100 transition-colors"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Invite Friends
+              </button>
+            )}
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-50"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              {copied ? "Copied" : "Share"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -258,6 +272,13 @@ export default function EventDetailsPage({ slug }: { slug: string }) {
             setShowJoinModal(false);
             fetchEvent();
           }}
+        />
+      )}
+      {showInviteModal && (
+        <InviteUserModal
+          eventId={event.id}
+          eventTitle={event.title}
+          onClose={() => setShowInviteModal(false)}
         />
       )}
     </div>

@@ -61,7 +61,7 @@ export function EventEditDialog({ open, onOpenChange, form, categories, submitti
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent position="popper" className="rounded-2xl border-0 shadow-2xl">
-                    {categories.map((c) => (
+                    {categories.map((c: any) => (
                       <SelectItem key={c.id} value={c.id} className="rounded-lg py-2 font-bold">{c.name}</SelectItem>
                     ))}
                   </SelectContent>

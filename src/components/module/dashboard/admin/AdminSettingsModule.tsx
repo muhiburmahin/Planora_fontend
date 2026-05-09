@@ -17,78 +17,86 @@ export function AdminSettingsModule() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-8"
+      className="space-y-8 max-w-6xl mx-auto px-4"
     >
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Security & Protocols</h1>
-          <p className="text-sm font-medium text-slate-500">Configure global platform security and operational parameters.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">Security & Protocols</h1>
+          <p className="text-base md:text-lg font-medium text-slate-500">Configure global platform security and operational parameters.</p>
         </div>
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-100 text-secondary-600 shadow-inner group transition-all hover:scale-110">
-          <Shield className="h-7 w-7" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-[2rem] bg-gradient-to-br from-secondary-100 to-primary-100 text-secondary-600 shadow-inner group transition-all hover:rotate-12">
+          <Shield className="h-8 w-8" />
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="border-0 bg-white shadow-xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Globe className="h-5 w-5 text-primary-500" />
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Access Control</CardTitle>
+        <Card className="border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none rounded-[2rem] overflow-hidden">
+          <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 p-8">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-white shadow-sm dark:bg-slate-700">
+                <Globe className="h-6 w-6 text-primary-500" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-black uppercase tracking-tight">Access Control</CardTitle>
+                <CardDescription className="text-xs font-bold text-slate-400">Manage global registration and visibility.</CardDescription>
+              </div>
             </div>
-            <CardDescription className="text-xs font-medium">Manage global registration and visibility.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-black text-slate-900">Public Registration</Label>
-                <p className="text-[11px] text-slate-500 font-medium">Allow new users to join the ecosystem.</p>
+          <CardContent className="p-8 space-y-8">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <Label className="text-base font-black text-slate-900 dark:text-white">Public Registration</Label>
+                <p className="text-xs text-slate-500 font-medium">Allow new users to join the ecosystem.</p>
               </div>
-              <Switch defaultChecked />
+              <Switch defaultChecked className="data-[state=checked]:bg-primary-500" />
             </div>
-            <div className="flex items-center justify-between border-t pt-4">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-black text-slate-900">Maintenance Mode</Label>
-                <p className="text-[11px] text-slate-500 font-medium">Restrict access to admins only during upgrades.</p>
+            <div className="flex items-center justify-between gap-4 border-t border-slate-50 dark:border-slate-800 pt-6">
+              <div className="space-y-1">
+                <Label className="text-base font-black text-slate-900 dark:text-white">Maintenance Mode</Label>
+                <p className="text-xs text-slate-500 font-medium">Restrict access to admins only during upgrades.</p>
               </div>
-              <Switch />
+              <Switch className="data-[state=checked]:bg-rose-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-white shadow-xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Zap className="h-5 w-5 text-amber-500" />
-              <CardTitle className="text-lg font-black uppercase tracking-tight">Performance Mesh</CardTitle>
+        <Card className="border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none rounded-[2rem] overflow-hidden">
+          <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 p-8">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-white shadow-sm dark:bg-slate-700">
+                <Zap className="h-6 w-6 text-amber-500" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-black uppercase tracking-tight">Performance Mesh</CardTitle>
+                <CardDescription className="text-xs font-bold text-slate-400">Optimize platform responsiveness and caching.</CardDescription>
+              </div>
             </div>
-            <CardDescription className="text-xs font-medium">Optimize platform responsiveness and caching.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-black text-slate-900">Edge Caching</Label>
-                <p className="text-[11px] text-slate-500 font-medium">Enable global CDN caching for event assets.</p>
+          <CardContent className="p-8 space-y-8">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <Label className="text-base font-black text-slate-900 dark:text-white">Edge Caching</Label>
+                <p className="text-xs text-slate-500 font-medium">Enable global CDN caching for event assets.</p>
               </div>
-              <Switch defaultChecked />
+              <Switch defaultChecked className="data-[state=checked]:bg-amber-500" />
             </div>
-            <div className="flex items-center justify-between border-t pt-4">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-black text-slate-900">Real-time Sync</Label>
-                <p className="text-[11px] text-slate-500 font-medium">Synchronize activity feeds across all nodes.</p>
+            <div className="flex items-center justify-between gap-4 border-t border-slate-50 dark:border-slate-800 pt-6">
+              <div className="space-y-1">
+                <Label className="text-base font-black text-slate-900 dark:text-white">Real-time Sync</Label>
+                <p className="text-xs text-slate-500 font-medium">Synchronize activity feeds across all nodes.</p>
               </div>
-              <Switch defaultChecked />
+              <Switch defaultChecked className="data-[state=checked]:bg-secondary-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-center md:justify-end pb-10">
         <Button
           onClick={handleSave}
-          className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest hover:bg-slate-800 shadow-2xl transition-all active:scale-95"
+          className="h-16 px-12 rounded-[1.5rem] bg-gradient-to-r from-slate-900 to-primary-900 text-white font-black uppercase tracking-widest hover:scale-105 shadow-2xl shadow-primary-500/20 transition-all active:scale-95 border-0"
         >
-          <Save className="h-5 w-5 mr-2" />
+          <Save className="h-5 w-5 mr-3" />
           Synchronize Protocols
         </Button>
       </div>

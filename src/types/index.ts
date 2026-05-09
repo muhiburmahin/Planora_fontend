@@ -9,7 +9,8 @@ export interface ApiMeta {
 }
 
 export interface ApiResponse<T> {
-  error: any;
+  error?: any;
+  errorSources?: Array<{ path: string; message: string }>;
   success: boolean;
   message: string;
   data: T;

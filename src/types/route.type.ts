@@ -3,7 +3,7 @@ import React from "react";
 export interface NavItem {
     title: string;
     url: string;
-    icon?: React.ReactNode;
+    icon?: React.ElementType;
 }
 
 export interface Routes {

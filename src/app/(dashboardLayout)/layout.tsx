@@ -26,7 +26,7 @@ export default async function DashboardLayout({
     user: React.ReactNode;
 }>) {
     const response = await userService.server.getSession();
-    const userData = response?.data?.user;
+    const userData = response?.data;
     const role = userData?.role as Role | undefined;
 
     const roleView: Record<Role, React.ReactNode> = {

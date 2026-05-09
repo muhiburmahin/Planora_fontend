@@ -8,34 +8,45 @@ export const adminRoutes: Routes[] = [
             {
                 title: "Overview",
                 url: "/admin-dashboard",
-                icon: <LayoutDashboard size={20} />,
+                icon: LayoutDashboard,
             },
             {
                 title: "Categories",
                 url: "/admin-dashboard/categories",
-                icon: <Tags size={20} />,
+                icon: Tags,
             },
             {
                 title: "Events",
                 url: "/admin-dashboard/events",
-                icon: <CalendarDays size={20} />,
+                icon: CalendarDays,
             },
+
 
             {
                 title: "Participations",
                 url: "/admin-dashboard/participations",
-                icon: <ClipboardList size={20} />,
+                icon: Users,
             },
 
             {
                 title: "Notifications",
                 url: "/admin-dashboard/notifications",
-                icon: <Bell size={20} />,
+                icon: Bell,
+            },
+            {
+                title: "Reviews",
+                url: "/admin-dashboard/reviews",
+                icon: Star,
+            },
+            {
+                title: "Users",
+                url: "/admin-dashboard/users",
+                icon: UserCog,
             },
             {
                 title: "Settings",
                 url: "/admin-dashboard/settings",
-                icon: <Shield size={20} />,
+                icon: Shield,
             },
 
         ],

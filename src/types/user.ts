@@ -8,7 +8,9 @@ export interface User {
   emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  // Profile interface-ta ke alada kore define korle use kora shohoj hoy
   profile?: {
+    id?: string;
     bio?: string;
     contactNumber?: string;
     address?: string;
@@ -66,4 +68,21 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
   updatedAt: string;
+}
+export interface UserOverviewStats {
+  totalEventsOrganized: number;
+  totalJoinedEvents: number;
+  pendingInvitations: number;
+  recentEvents: {
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    venue: string;
+    shortDescription?: string;
+    category: {
+      name: string;
+    };
+    status: string;
+  }[];
 }

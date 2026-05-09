@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { invitationService } from "@/services/invitationService";
 import { cleanupInvitationsAction } from "@/actions/invitation.actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -25,33 +26,20 @@ import { Input } from "@/components/ui/input";
 import { TableSkeleton } from "../shared/TableSkeleton";
 
 export function AdminInvitationsModule() {
-  const [invitations, setInvitations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [isCleaning, setIsCleaning] = useState(false);
   const limit = 8;
 
-  const fetchInvitations = async () => {
-    setLoading(true);
-    const response = await invitationService.getAllInvitations({ searchTerm }, { page, limit });
-    if (response.success) {
-      const payload = response.data as any;
-      setInvitations(payload.data ?? payload);
-      setTotalPages(payload.meta?.totalPage || 1);
-    } else {
-      toast.error("Failed to load invitation ledger");
-    }
-    setLoading(false);
-  };
+  const { data: invitationsResponse, isLoading: loading } = useQuery({
+    queryKey: ["admin-invitations", searchTerm, page],
+    queryFn: () => invitationService.getAllInvitations({ searchTerm }, { page, limit }),
+    refetchInterval: 60000,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-        fetchInvitations();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchTerm, page]);
+  const invitations = (invitationsResponse?.data as any)?.data ?? invitationsResponse?.data ?? [];
+  const totalPages = (invitationsResponse?.data as any)?.meta?.totalPage || 1;
 
   const handleCleanup = async () => {
     if (!confirm("Are you sure? This will archive all processed or stale invitations.")) return;
@@ -60,7 +48,7 @@ export function AdminInvitationsModule() {
     setIsCleaning(false);
     if (result.success) {
       toast.success(result.message);
-      fetchInvitations();
+      queryClient.invalidateQueries({ queryKey: ["admin-invitations"] });
     } else {
       toast.error(result.message);
     }
@@ -108,7 +96,8 @@ export function AdminInvitationsModule() {
       </div>
 
       <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
-        <div className="overflow-x-auto">
+        {/* Desktop View: Advanced Mesh Ledger */}
+        <div className="hidden md:block overflow-x-auto">
           {loading ? (
              <TableSkeleton columns={5} rows={8} />
           ) : (
@@ -124,13 +113,13 @@ export function AdminInvitationsModule() {
               </TableHeader>
               <TableBody>
                 <AnimatePresence mode="popLayout">
-                {invitations.map((invite, index) => (
+                {invitations.map((invite: any, index: number) => (
                   <motion.tr 
                     key={invite.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                    className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                   >
                     <TableCell className="px-8 py-5">
                       <div className="space-y-2">
@@ -154,7 +143,7 @@ export function AdminInvitationsModule() {
                       <Badge className={`rounded-lg border-0 px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
                         invite.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' :
                         invite.status === 'PENDING' ? 'bg-amber-50 text-amber-600 ring-1 ring-amber-200' :
-                        'bg-rose-50 text-rose-600 ring-1 ring-rose-200'
+                        'bg-rose-50 text-red-600 ring-1 ring-rose-200'
                       }`}>
                         {invite.status}
                       </Badge>
@@ -166,7 +155,7 @@ export function AdminInvitationsModule() {
                     </TableCell>
                     <TableCell className="px-8 py-5 text-right">
                        <div className="flex justify-end">
-                           <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-300">
+                           <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-300 transition-colors group-hover:bg-primary-50 group-hover:text-primary-400">
                                <AlertCircle className="h-5 w-5" />
                            </div>
                        </div>
@@ -187,6 +176,67 @@ export function AdminInvitationsModule() {
               </TableBody>
             </Table>
           )}
+        </div>
+
+        {/* Mobile View: Intelligence Mesh Cards */}
+        <div className="block md:hidden">
+            {loading ? (
+                <div className="p-6 space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-44 rounded-3xl bg-slate-100 animate-pulse" />
+                    ))}
+                </div>
+            ) : (
+                <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                    <AnimatePresence>
+                        {invitations.map((invite: any, index: number) => (
+                            <motion.div 
+                                key={invite.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="p-6 space-y-5"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="h-4 w-4 text-primary-500" />
+                                        <h3 className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[200px]">
+                                            {invite.event?.title}
+                                        </h3>
+                                    </div>
+                                    <Badge className={`rounded-lg border-0 px-2 py-1 text-[9px] font-black uppercase ${
+                                        invite.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' :
+                                        invite.status === 'PENDING' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-red-600'
+                                    }`}>
+                                        {invite.status}
+                                    </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-3">
+                                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50">
+                                        <div className="space-y-0.5">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase">Sender</p>
+                                            <p className="text-xs font-black text-slate-700 dark:text-slate-200">{invite.sender?.name}</p>
+                                        </div>
+                                        <div className="h-1 w-4 bg-slate-200 rounded-full" />
+                                        <div className="space-y-0.5 text-right">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase">Recipient</p>
+                                            <p className="text-xs font-black text-slate-700 dark:text-slate-200">{invite.receiver?.name}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between px-1">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase">
+                                        Sent {new Date(invite.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    </p>
+                                    <AlertCircle className="h-4 w-4 text-slate-200" />
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+            )}
         </div>
 
         {/* Intelligence Pagination */}

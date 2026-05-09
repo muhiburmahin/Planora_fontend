@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { reviewService } from "@/services/reviewService";
 import { deleteReviewByAdminAction } from "@/actions/review.actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -35,39 +36,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function AdminReviewsModule() {
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const limit = 8;
 
-  const fetchReviews = async () => {
-    setLoading(true);
-    const response = await reviewService.getAllReviews({ searchTerm }, { page, limit });
-    if (response.success) {
-      const payload = response.data as any;
-      setReviews(payload.data ?? payload);
-      setTotalPages(payload.meta?.totalPage || 1);
-    } else {
-      toast.error("Failed to load review registry");
-    }
-    setLoading(false);
-  };
+  const { data: reviewsResponse, isLoading: loading } = useQuery({
+    queryKey: ["admin-reviews", searchTerm, page],
+    queryFn: () => reviewService.getAllReviews({ searchTerm }, { page, limit }),
+    refetchInterval: 60000,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-        fetchReviews();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchTerm, page]);
+  const reviews = (reviewsResponse?.data as any)?.data ?? reviewsResponse?.data ?? [];
+  const totalPages = (reviewsResponse?.data as any)?.meta?.totalPage || 1;
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to remove this review? This action is irreversible.")) return;
     const result = await deleteReviewByAdminAction(id);
     if (result.success) {
       toast.success(result.message);
-      fetchReviews();
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
     } else {
       toast.error(result.message);
     }
@@ -103,7 +92,8 @@ export function AdminReviewsModule() {
       </div>
 
       <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
-        <div className="overflow-x-auto">
+        {/* Desktop View: Advanced Ledger Table */}
+        <div className="hidden md:block overflow-x-auto">
           {loading ? (
              <TableSkeleton columns={5} rows={8} />
           ) : (
@@ -119,13 +109,13 @@ export function AdminReviewsModule() {
               </TableHeader>
               <TableBody>
                 <AnimatePresence mode="popLayout">
-                {reviews.map((review, index) => (
+                {reviews.map((review: any, index: number) => (
                   <motion.tr 
                     key={review.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                    className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                   >
                     <TableCell className="px-8 py-5">
                       <div className="flex items-center gap-3">
@@ -163,7 +153,7 @@ export function AdminReviewsModule() {
                     <TableCell className="px-8 py-5 text-right">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100">
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100 transition-all active:scale-90">
                                     <MoreHorizontal className="h-5 w-5 text-slate-400" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -178,10 +168,6 @@ export function AdminReviewsModule() {
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     Purge Review
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
-                                    <ShieldAlert className="h-4 w-4" />
-                                    Flag for Review
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -202,6 +188,66 @@ export function AdminReviewsModule() {
               </TableBody>
             </Table>
           )}
+        </div>
+
+        {/* Mobile View: Intelligence Cards */}
+        <div className="block md:hidden">
+            {loading ? (
+                <div className="p-6 space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-40 rounded-3xl bg-slate-100 animate-pulse" />
+                    ))}
+                </div>
+            ) : (
+                <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                    <AnimatePresence>
+                        {reviews.map((review: any, index: number) => (
+                            <motion.div 
+                                key={review.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="p-6 space-y-4"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-primary-600">
+                                            {review.user?.name?.[0] || 'U'}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black text-slate-900 dark:text-white">{review.user?.name}</p>
+                                            <div className="flex items-center gap-1">
+                                                {Array.from({ length: 5 }).map((_, i) => (
+                                                    <Star 
+                                                        key={i} 
+                                                        className={`h-2.5 w-2.5 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        className="h-9 w-9 rounded-lg border-rose-100 text-rose-500 hover:bg-rose-50"
+                                        onClick={() => handleDelete(review.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <div className="space-y-1.5 px-1">
+                                    <p className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-1">
+                                        <Calendar className="h-2.5 w-2.5" /> {review.event?.title}
+                                    </p>
+                                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400 italic leading-relaxed">
+                                        "{review.comment}"
+                                    </p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+            )}
         </div>
 
         {/* Intelligence Pagination */}

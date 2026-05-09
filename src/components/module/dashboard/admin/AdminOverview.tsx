@@ -10,34 +10,20 @@ import { CalendarDays, TrendingUp, Users, Star, ArrowUpRight, Loader2, CheckCirc
 import { userService } from "@/services/userService";
 import { AdminDashboardStats } from "@/types/user";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const PIE_COLORS = ["#9333ea", "#f97316", "#7e22ce", "#ea580c", "#6b21a8", "#c2410c"];
 
 export function AdminOverview() {
-  const [data, setData] = useState<AdminDashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: statsResponse, isLoading: loading } = useQuery({
+    queryKey: ["admin-dashboard-stats"],
+    queryFn: () => userService.getDashboardStats(),
+    refetchInterval: 60000, // Poll every minute
+  });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await userService.getDashboardStats();
-        if (response.success) {
-          setData(response.data as AdminDashboardStats);
-        } else {
-          toast.error("Failed to load dashboard stats");
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("An error occurred while fetching stats");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  const data = statsResponse?.data as AdminDashboardStats | null;
 
   if (loading) {
     return (
@@ -85,23 +71,23 @@ export function AdminOverview() {
       {/* Hero Analytics Header */}
       <motion.div
         variants={itemVariants}
-        className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900 p-10 text-white shadow-2xl"
+        className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900 p-6 md:p-10 text-white shadow-2xl"
       >
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="space-y-2">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+          <div className="space-y-3">
             <Badge className="bg-primary-500/20 text-primary-200 border-primary-500/30 mb-2">Platform Sentinel v2.0</Badge>
-            <h1 className="text-4xl font-black tracking-tight lg:text-5xl">Executive <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-400">Intelligence</span></h1>
-            <p className="mt-2 text-slate-400 max-w-lg font-medium leading-relaxed">
+            <h1 className="text-4xl font-black tracking-tight lg:text-6xl">Executive <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-400">Intelligence</span></h1>
+            <p className="mt-2 text-slate-400 max-w-lg font-medium text-base md:text-lg leading-relaxed">
               Synthesizing real-time interactions into actionable insights for the Planora ecosystem.
             </p>
           </div>
           <div className="flex gap-4">
-            <div className="rounded-2xl bg-white/5 p-4 backdrop-blur-md border border-white/10 text-center min-w-[100px]">
-              <p className="text-[10px] font-black uppercase text-slate-500">Live Nodes</p>
+            <div className="flex-1 md:flex-none rounded-2xl bg-white/5 p-4 backdrop-blur-md border border-white/10 text-center min-w-[100px]">
+              <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Live Nodes</p>
               <p className="text-2xl font-black text-emerald-400">{data.summary.totalEvents}</p>
             </div>
-            <div className="rounded-2xl bg-white/5 p-4 backdrop-blur-md border border-white/10 text-center min-w-[100px]">
-              <p className="text-[10px] font-black uppercase text-slate-500">Active Mesh</p>
+            <div className="flex-1 md:flex-none rounded-2xl bg-white/5 p-4 backdrop-blur-md border border-white/10 text-center min-w-[100px]">
+              <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Active Mesh</p>
               <p className="text-2xl font-black text-primary-400">{data.summary.totalUsers}</p>
             </div>
           </div>
@@ -115,19 +101,11 @@ export function AdminOverview() {
           transition={{ duration: 8, repeat: Infinity }}
           className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-primary-500/20 blur-[100px]"
         />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.1, 0.15, 0.1]
-          }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-secondary-500/20 blur-[100px]"
-        />
       </motion.div>
 
       {/* Dynamic Stat Mesh */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
+        {stats.map((s: any) => (
           <motion.div
             key={s.label}
             variants={itemVariants}
@@ -144,15 +122,12 @@ export function AdminOverview() {
                     {s.positive ? <TrendingUp className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                     {s.change}
                   </div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Trend / 30D</span>
                 </div>
               </div>
-              <div className={`flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-gradient-to-br ${s.color} text-white shadow-lg transition-all group-hover:rotate-12`}>
+              <div className={`shrink-0 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-gradient-to-br ${s.color} text-white shadow-lg transition-all group-hover:rotate-12`}>
                 <s.icon className="h-7 w-7" />
               </div>
             </div>
-            {/* Background accent */}
-            <div className={`absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br ${s.color} opacity-0 group-hover:opacity-[0.03] transition-opacity`} />
           </motion.div>
         ))}
       </div>
@@ -160,19 +135,19 @@ export function AdminOverview() {
       {/* Analytic Projections */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Growth Matrix */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
-          <Card className="h-full overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900">
-            <CardHeader className="flex flex-row items-center justify-between pb-8">
+        <motion.div variants={itemVariants} className="lg:col-span-2 order-2 lg:order-1">
+          <Card className="h-full overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 rounded-[2rem]">
+            <CardHeader className="flex flex-row items-center justify-between p-8 pb-4">
               <div className="space-y-1">
                 <CardTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Growth Velocity</CardTitle>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">Monthly Event Projection</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Event Projection</p>
               </div>
               <div className="flex gap-2">
                 <div className="h-2 w-2 rounded-full bg-primary-500 animate-pulse" />
                 <span className="text-[10px] font-black uppercase text-slate-500">Live Stream</span>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-8">
               <ResponsiveContainer width="100%" height={340}>
                 <BarChart data={data.monthlyTrend}>
                   <defs>
@@ -182,14 +157,14 @@ export function AdminOverview() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 800, fill: '#94a3b8' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 800, fill: '#94a3b8' }} />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} />
                   <Tooltip
                     cursor={{ fill: '#f8fafc' }}
                     contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', padding: '15px' }}
                     itemStyle={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '12px' }}
                   />
-                  <Bar dataKey="events" fill="url(#barGradient)" radius={[10, 10, 0, 0]} barSize={45} />
+                  <Bar dataKey="events" fill="url(#barGradient)" radius={[10, 10, 0, 0]} barSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -197,30 +172,30 @@ export function AdminOverview() {
         </motion.div>
 
         {/* Sector Distribution */}
-        <motion.div variants={itemVariants}>
-          <Card className="h-full overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900">
-            <CardHeader>
+        <motion.div variants={itemVariants} className="order-1 lg:order-2">
+          <Card className="h-full overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 rounded-[2rem]">
+            <CardHeader className="p-8">
               <CardTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight text-center">Taxonomy Mesh</CardTitle>
               <p className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Event Distribution</p>
             </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <ResponsiveContainer width="100%" height={280}>
+            <CardContent className="flex flex-col items-center p-8 pt-0">
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value" stroke="none">
-                    {pieData.map((_, i) => (
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value" stroke="none">
+                    {pieData.map((_: any, i: number) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 w-full">
-                {pieData.map((item, i) => (
+              <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 w-full">
+                {pieData.map((item: any, i: number) => (
                   <div key={item.name} className="flex items-center gap-3">
-                    <div className="h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}></div>
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none">{item.name}</p>
-                      <p className="text-[9px] font-bold text-slate-400">{item.value} ENTRIES</p>
+                    <div className="h-2.5 w-2.5 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}></div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none truncate">{item.name}</p>
+                      <p className="text-[9px] font-bold text-slate-400">{item.value} ITEMS</p>
                     </div>
                   </div>
                 ))}
@@ -232,23 +207,25 @@ export function AdminOverview() {
 
       {/* Real-time Activity Hub */}
       <motion.div variants={itemVariants}>
-        <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900">
-          <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30 px-10 py-7 dark:border-slate-800 dark:bg-slate-900/50">
+        <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 rounded-[2rem]">
+          <CardHeader className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-50 bg-slate-50/30 p-8 dark:border-slate-800 dark:bg-slate-900/50 gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-500/20">
+              <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-primary-600 text-white shadow-lg shadow-primary-500/20">
                 <ActivityIcon className="h-6 w-6" />
               </div>
               <div>
                 <CardTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Active Pulse</CardTitle>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Real-time user engagement feed</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Real-time engagement feed</p>
               </div>
             </div>
-            <button className="group flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-xs font-black text-slate-900 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:ring-slate-700">
+            <button className="w-full md:w-auto group flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-xs font-black text-slate-900 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:ring-slate-700">
               Full Ledger
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </button>
           </CardHeader>
-          <div className="overflow-x-auto">
+
+          {/* Desktop Activity Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50 dark:border-slate-800">
@@ -261,7 +238,7 @@ export function AdminOverview() {
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                 <AnimatePresence>
-                  {data.recentActivities.map((act, idx) => (
+                  {data.recentActivities.map((act: any, idx: number) => (
                     <motion.tr
                       key={act.id}
                       initial={{ opacity: 0, x: -10 }}
@@ -302,6 +279,40 @@ export function AdminOverview() {
                 </AnimatePresence>
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Activity Cards */}
+          <div className="block md:hidden divide-y divide-slate-50 dark:divide-slate-800">
+            <AnimatePresence>
+              {data.recentActivities.map((act: any, idx: number) => (
+                <motion.div
+                  key={act.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="p-6 space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-primary-600 font-black">
+                        {act.user?.name?.[0] || 'U'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900 dark:text-white">{act.user?.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">{new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="rounded-lg border-emerald-100 bg-emerald-50 text-[9px] font-black text-emerald-600">
+                      VERIFIED
+                    </Badge>
+                  </div>
+                  <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Experience</p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{act.event?.title}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </Card>
       </motion.div>

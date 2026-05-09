@@ -82,7 +82,7 @@ export function EventsTable({
                         <Button onClick={() => onEdit(event)} variant="outline" size="sm">
                           Edit
                         </Button>
-                        <EventDeleteButton id={event.id as string} onDelete={onDelete} />
+                        <EventDeleteButton eventId={event.id as string} onDelete={onDelete} />
                       </TableCell>
                     </TableRow>
                   ))}

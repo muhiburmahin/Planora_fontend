@@ -70,7 +70,7 @@ const adminItems: NavItem[] = [
     { label: "All Events", href: "/admin-dashboard/events", icon: <CalendarDays className="h-4 w-4" /> },
     { label: "Categories", href: "/admin-dashboard/categories", icon: <Tags className="h-4 w-4" /> },
     { label: "Users", href: "/admin-dashboard/users", icon: <UserCog className="h-4 w-4" /> },
-    { label: "Participants", href: "/admin-dashboard/participants", icon: <Users className="h-4 w-4" /> },
+    { label: "Participations", href: "/admin-dashboard/participations", icon: <Users className="h-4 w-4" /> },
     { label: "Notifications", href: "/admin-dashboard/notifications", icon: <Bell className="h-4 w-4" /> },
     { label: "Settings", href: "/admin-dashboard/settings", icon: <Settings className="h-4 w-4" /> },
 ];
@@ -118,7 +118,7 @@ export function DashboardSidebar({ user, children }: DashboardSidebarProps) {
                         </SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu className="space-y-1">
-                                {items.map((item) => {
+                                {items.map((item: any) => {
                                     const isOverview =
                                         item.href === "/admin-dashboard" || item.href === "/dashboard";
                                     const active = isOverview

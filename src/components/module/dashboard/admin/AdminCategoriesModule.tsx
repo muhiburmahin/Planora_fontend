@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { categoryService } from "@/services/categoryService";
 import { createCategoryAction, deleteCategoryAction, toggleCategoryStatusAction, updateCategoryAction } from "@/actions/category.actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { categoryFormSchema, CategoryFormInput } from "@/lib/validations/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,16 +49,23 @@ const defaultValues: CategoryFormInput = {
 };
 
 export function AdminCategoriesModule() {
-  const [items, setItems] = useState<CategoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const limit = 8;
+
+  const { data: categoriesResponse, isLoading: loading } = useQuery({
+    queryKey: ["admin-categories", searchTerm, page],
+    queryFn: () => categoryService.getAllCategories({ searchTerm }, { limit, page }),
+    refetchInterval: 60000,
+  });
+
+  const items = (categoriesResponse?.data as any)?.data ?? categoriesResponse?.data ?? [];
+  const totalPages = (categoriesResponse?.data as any)?.meta?.totalPages || 1;
 
   const createForm = useForm<CategoryFormInput>({
     resolver: zodResolver(categoryFormSchema),
@@ -68,24 +76,6 @@ export function AdminCategoriesModule() {
     resolver: zodResolver(categoryFormSchema),
     defaultValues,
   });
-
-  const loadCategories = async () => {
-    setLoading(true);
-    const response = await categoryService.getAllCategories({ searchTerm }, { limit, page });
-    if (response?.success) {
-      const payload = response.data as any;
-      setItems(payload?.data ?? payload ?? []);
-      setTotalPages(payload?.meta?.totalPages || 1);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadCategories();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchTerm, page]);
 
   const onCreateSubmit = createForm.handleSubmit(async (data) => {
     setSubmitting(true);
@@ -101,7 +91,8 @@ export function AdminCategoriesModule() {
     toast.success("Category defined successfully");
     createForm.reset(defaultValues);
     setCreateOpen(false);
-    loadCategories();
+    queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
   });
 
   const openEdit = (item: CategoryItem) => {
@@ -129,7 +120,8 @@ export function AdminCategoriesModule() {
     toast.success("Category refined successfully");
     setEditOpen(false);
     setEditing(null);
-    loadCategories();
+    queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
   });
 
   const onToggleStatus = async (id: string) => {
@@ -138,7 +130,7 @@ export function AdminCategoriesModule() {
     const result = await toggleCategoryStatusAction(null, formData);
     if (result?.success) {
       toast.success("Status updated");
-      loadCategories();
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } else {
       toast.error(result?.message || "Failed to update status");
     }
@@ -151,7 +143,8 @@ export function AdminCategoriesModule() {
     const result = await deleteCategoryAction(null, formData);
     if (result?.success) {
       toast.success("Category removed from active taxonomy");
-      loadCategories();
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
     } else {
       toast.error(result?.message || "Failed to delete");
     }
@@ -208,7 +201,8 @@ export function AdminCategoriesModule() {
       </div>
 
       <Card className="overflow-hidden border-0 bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-900 dark:shadow-none">
-        <div className="overflow-x-auto">
+        {/* Desktop View: Taxonomy Table */}
+        <div className="hidden md:block overflow-x-auto">
           {loading ? (
              <TableSkeleton columns={5} rows={8} />
           ) : (
@@ -224,7 +218,7 @@ export function AdminCategoriesModule() {
               </TableHeader>
               <TableBody>
                 <AnimatePresence mode="popLayout">
-                {items.map((item, index) => (
+                {items.map((item: any, index: number) => (
                 <motion.tr 
                   key={item.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -288,6 +282,59 @@ export function AdminCategoriesModule() {
             </TableBody>
             </Table>
           )}
+        </div>
+
+        {/* Mobile View: Taxonomy Cards */}
+        <div className="block md:hidden">
+            {loading ? (
+                <div className="p-6 space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-32 rounded-3xl bg-slate-100 animate-pulse" />
+                    ))}
+                </div>
+            ) : (
+                <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                    <AnimatePresence>
+                        {items.map((item: any, index: number) => (
+                            <motion.div 
+                                key={item.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="p-6 space-y-4"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+                                            <Tags className="h-5 w-5" />
+                                        </div>
+                                        <h3 className="text-lg font-black text-slate-900 dark:text-white">{item.name}</h3>
+                                    </div>
+                                    <Badge className={`rounded-lg border-0 px-2.5 py-1 text-[9px] font-black uppercase ${
+                                        item.isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
+                                    }`}>
+                                        {item.isActive ? "Active" : "Standby"}
+                                    </Badge>
+                                </div>
+                                <div className="flex items-center justify-between px-1">
+                                    <div className="flex items-center gap-1.5">
+                                        <Activity className="h-3.5 w-3.5 text-slate-400" />
+                                        <span className="text-xs font-black text-slate-600">{item._count?.events ?? 0} Events</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-slate-100" onClick={() => openEdit(item)}>
+                                            <SquarePen className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-slate-100 text-rose-500" onClick={() => onDelete(item.id)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+            )}
         </div>
 
         {/* Pagination */}
